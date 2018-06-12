@@ -15,18 +15,29 @@
             return double.IsNaN(value) ? defaultValue : value;
         }
 
+        private static double[] Create(int length, double value = double.NaN)
+        {
+            var values = new double[length];
+
+            for (var index = length - 1; index >= 0; index--)
+            {
+                values[index] = value;
+            }
+            return values;
+        }
 
         public static double[] Ema(double[] data, int period)
         {
+            // wf = 2 / (n + 1)
+            // ema = nn(ema[1], close) + wf * nn(close - ema[1], 0)
+
             var wf = 2.0 / (period + 1);
 
-            var ema = new double[data.Length];
+            var ema = Create(data.Length);
 
             for (var index = data.Length - 1; index >= 0; index--)
             {
-                var value = nn(ema.At(index + 1), data[index]);
-                var factor = nn(data[index] - ema.At(index + 1), 0);
-                ema[index] = value + wf * factor;
+                ema[index] = nn(ema.At(index + 1), data[index]) + wf * nn(data[index] - ema.At(index + 1));
             }
 
             Debug.Assert(ema.Length == data.Length);
@@ -36,11 +47,11 @@
         public static double[] Sma(double[] data, int period)
         {
             // sma = nn(sma[1], 0) + (close / n) - nn(close[n] / n, 0)
-            var sma = new double[data.Length];
+            var sma = Create(data.Length);
 
             for (var index = data.Length - 1; index >= 0; index--)
             {
-                sma[index] = nn(sma.At(index + 1), 0) + data[index] / period - nn(data.At(index + period) / period, 0);
+                sma[index] = nn(sma.At(index + 1)) + data[index] / period - nn(data.At(index + period) / period);
             }
 
             Debug.Assert(sma.Length == data.Length);
@@ -51,14 +62,14 @@
         {
             // dema = 2*ema(close, n) - ema(ema(close, n), n)
 
-            var ema = Ema(data, period);
-            var emaOfEma = Ema(ema, period);
+            var ema1 = Ema(data, period);
+            var ema2 = Ema(ema1, period);
 
-            var dema = new double[data.Length];
+            var dema = Create(data.Length);
 
             for (var index = data.Length - 1; index >= 0; index--)
             {
-                dema[index] = 2*ema[index] - emaOfEma[index];
+                dema[index] = 2*ema1[index] - ema2[index];
             }
 
             Debug.Assert(dema.Length == data.Length);
@@ -76,7 +87,7 @@
             var ema2 = Ema(ema1, period);
             var ema3 = Ema(ema2, period);
 
-            var tema = new double[data.Length];
+            var tema = Create(data.Length);
 
             for (var index = data.Length - 1; index >= 0; index--)
             {
@@ -87,12 +98,12 @@
             return tema;
         }
 
-        private static double sum(double[] data, int startIndex, int length)
+        private static double Sum(double[] data, int startIndex, int length)
         {
             var result = 0.0;
             for (int index = startIndex; index < startIndex + length; index++)
             {
-                result += nn(data.At(index));
+                result += data.At(index);
             }
             return result;
         }
@@ -119,17 +130,16 @@
             var nSlowend = 0.0645;
             var xPrice = data;
 
-            var kama = new double[data.Length];
-            var xvNoise = new double[data.Length];
-            var nSignal = new double[data.Length];
+            var kama = Create(data.Length);
+            var xvNoise = Create(data.Length);
+            var nSignal = Create(data.Length);
 
             for (var index = data.Length - 1; index >= 0; index--)
             {
-                xvNoise[index] = Math.Abs(xPrice[index] - nn(xPrice.At(index + 1)));
-                nSignal[index] = Math.Abs(xPrice[index] - nn(xPrice.At(index + length)));
-                var nNoise = sum(xvNoise, index, length);
-
-
+                xvNoise[index] = Math.Abs(xPrice[index] - xPrice.At(index + 1));
+                nSignal[index] = Math.Abs(xPrice[index] - xPrice.At(index + length));
+                var nNoise = Sum(xvNoise, index, length);
+                
                 var nefRatio = nNoise != 0 ? nSignal[index] / nNoise : 0;
                 var nSmooth = Math.Pow(nefRatio * (nFastend - nSlowend) + nSlowend, 2);
                 

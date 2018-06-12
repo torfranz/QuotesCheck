@@ -8,47 +8,84 @@
 
     using CsvHelper;
 
+    using Newtonsoft.Json;
+
     internal class SymbolProvider
     {
-        private const string ReferencePath = @"ReferenceData\BXESymbols-PROD.csv";
+        private const string Folder = @"ReferenceData";
 
-        private const string TempReferencePath = @"ReferenceData\BXESymbols-TEMP.csv";
+        private readonly JsonSerializerSettings jsonSettings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto };
+
+        private readonly string referencePath = Path.Combine(Folder, "BXESymbols-PROD.csv");
+
+        private readonly string tempReferencePath = Path.Combine(Folder, "BXESymbols-TEMP.csv");
+
+        private IEnumerable<SymbolInformation> emptySymbols;
 
         public SymbolProvider(bool updateFirst = false)
         {
             if (updateFirst) this.UpdateReference();
-
-            this.Read();
         }
 
-        public IEnumerable<SymbolInformation> Symbols { get; private set; } = Enumerable.Empty<SymbolInformation>();
+        private IEnumerable<SymbolInformation> EmptySymbols => this.emptySymbols ?? (this.emptySymbols = this.ReadEmptySymbols());
 
-        public void UpdateReference()
+        private IDictionary<string, SymbolInformation> Symbols { get; } = new Dictionary<string, SymbolInformation>();
+
+        private void UpdateReference()
         {
             using (var wc = new WebClient())
             {
-                wc.DownloadFile(new Uri("https://batstrading.co.uk/bxe/market_data/symbol_listing/csv/"), TempReferencePath);
+                wc.DownloadFile(new Uri("https://batstrading.co.uk/bxe/market_data/symbol_listing/csv/"), this.tempReferencePath);
             }
 
-            File.Delete(ReferencePath);
-            File.Move(TempReferencePath, ReferencePath);
+            File.Delete(this.referencePath);
+            File.Move(this.tempReferencePath, this.referencePath);
         }
 
-        public void Read()
+        private IEnumerable<SymbolInformation> ReadEmptySymbols()
         {
-            using (TextReader fileReader = File.OpenText(ReferencePath))
+            using (TextReader fileReader = File.OpenText(this.referencePath))
             {
                 var firstLine = fileReader.ReadLine();
 
                 var csv = new CsvReader(fileReader);
                 csv.Configuration.IncludePrivateMembers = true;
-                this.Symbols = csv.GetRecords<SymbolInformation>().ToArray();
+                return csv.GetRecords<SymbolInformation>().ToArray();
             }
         }
 
         public SymbolInformation LookUpISIN(string isin)
         {
-            return this.Symbols.First(item => Equals(item.ISIN.ToUpperInvariant(), isin.ToUpperInvariant()));
+            isin = isin.ToUpperInvariant();
+
+            // check if we know this already
+            if (this.Symbols.ContainsKey(isin)) return this.Symbols[isin];
+
+            // check if we can load a file from disk
+            var dataPath = Path.Combine(Folder, $"{isin}.json");
+            if (File.Exists(dataPath))
+            {
+                var symbol = JsonConvert.DeserializeObject<SymbolInformation>(File.ReadAllText(dataPath), this.jsonSettings);
+
+                // are time series still current, no => update
+                if (symbol.TimeSeries == null || symbol.TimeSeries[0].Day.DayOfYear < DateTime.Now.DayOfYear
+                                              || symbol.TimeSeries[0].Day.Year < DateTime.Now.Year)
+                    symbol.UpdateTimeSeries();
+
+                this.Symbols.Add(isin, symbol);
+                return symbol;
+            }
+            else
+            {
+                // nothing exists so far, create new 
+                var symbol = this.EmptySymbols.First(item => Equals(item.ISIN.ToUpperInvariant(), isin));
+                symbol.UpdateTimeSeries();
+
+                this.Symbols.Add(isin, symbol);
+
+                File.WriteAllText(dataPath, JsonConvert.SerializeObject(symbol, this.jsonSettings));
+                return symbol;
+            }
         }
     }
 }

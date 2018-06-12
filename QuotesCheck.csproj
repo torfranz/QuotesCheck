@@ -66,6 +66,7 @@
     <None Include="ReferenceData\BXESymbols-PROD.csv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="stylecop.json" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Misc\.gitattributes" />

@@ -12,11 +12,10 @@
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
             var symbolProvider = new SymbolProvider();
-            var dataProvider = new DataProvider();
-
             var symbol = symbolProvider.LookUpISIN("DE000A0D9PT0");
-            var dailyAdjusted = dataProvider.GetDailyData(symbol);
-            var ema20 = Indicators.Dema(dailyAdjusted.Select(item => item.Close).ToArray(), 20);
+            var ema20 = Indicators.Ema(symbol.TimeSeries.Select(item => item.Close).ToArray(), 20);
+            var dema20 = Indicators.Dema(symbol.TimeSeries.Select(item => item.Close).ToArray(), 20);
+            var sma20 = Indicators.Sma(symbol.TimeSeries.Select(item => item.Close).ToArray(), 20);
         }
     }
 }

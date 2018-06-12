@@ -1,9 +1,27 @@
 ﻿namespace QuotesCheck
 {
+    using System;
     using System.Diagnostics;
 
     internal static class Indicators
     {
+        private static double At(this double[] data, int index)
+        {
+            try
+            {
+                return data[index];
+            }
+            catch (IndexOutOfRangeException)
+            {
+                return double.NaN;
+            }
+        }
+
+        private static double nn(double value, double defaultValue)
+        {
+            return double.IsNaN(value) ? defaultValue : value;
+        }
+
         public static double[] Ema(double[] data, int period)
         {
             var wf = 2.0 / (period + 1);
@@ -15,8 +33,8 @@
                 var valueAtIndex = data[index];
                 Debug.Assert(valueAtIndex > 0);
 
-                var value = index < data.Length - 1 ? ema[index + 1] : valueAtIndex;
-                var factor = index < data.Length - 1 ? valueAtIndex - ema[index + 1] : 0;
+                var value = nn(ema.At(index + 1), valueAtIndex);
+                var factor = nn(valueAtIndex - ema.At(index + 1), 0);
                 ema[index] = value + wf * factor;
             }
 
@@ -24,8 +42,27 @@
             return ema;
         }
 
+        public static double[] Sma(double[] data, int period)
+        {
+            // sma = nn(sma[1], 0) + (close / n) - nn(close[n] / n, 0)
+            var sma = new double[data.Length];
+
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                var valueAtIndex = data[index];
+                Debug.Assert(valueAtIndex > 0);
+
+                sma[index] = nn(sma.At(index + 1), 0) + valueAtIndex / period - nn(data.At(index + period) / period, 0);
+            }
+
+            Debug.Assert(sma.Length == data.Length);
+            return sma;
+        }
+
         public static double[] Dema(double[] data, int period)
         {
+            // dema = 2*ema(close, n) - ema(ema(close, n), n)
+
             var ema = Ema(data, period);
             var emaOfEma = Ema(ema, period);
 
@@ -36,6 +73,7 @@
                 dema[index] = 2 * ema[index] - emaOfEma[index];
             }
 
+            Debug.Assert(dema.Length == data.Length);
             return dema;
         }
     }

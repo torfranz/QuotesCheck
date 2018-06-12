@@ -16,7 +16,7 @@
             this.connection.Connect("XS7IY6V9YRY2SL15");
         }
 
-        public IList<TimeSeries> GetDailyData(
+        public IList<TimeSeries> UpdateTimeSeries(
             SymbolInformation symbol,
             Const_TIME_SERIES_DAILY.TIME_SERIES_DAILY_outputsize size = Const_TIME_SERIES_DAILY.TIME_SERIES_DAILY_outputsize.full)
         {

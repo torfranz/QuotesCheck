@@ -16,7 +16,7 @@
 
             var symbol = symbolProvider.LookUpISIN("DE000A0D9PT0");
             var dailyAdjusted = dataProvider.GetDailyData(symbol);
-            var ema20 = Indicators.Ema(dailyAdjusted.Select(item => item.Close).ToArray(), 20);
+            var ema20 = Indicators.Dema(dailyAdjusted.Select(item => item.Close).ToArray(), 20);
         }
     }
 }

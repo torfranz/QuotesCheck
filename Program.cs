@@ -16,6 +16,8 @@
             var ema20 = Indicators.Ema(symbol.TimeSeries.Select(item => item.Close).ToArray(), 20);
             var dema20 = Indicators.Dema(symbol.TimeSeries.Select(item => item.Close).ToArray(), 20);
             var sma20 = Indicators.Sma(symbol.TimeSeries.Select(item => item.Close).ToArray(), 20);
+            var tema20 = Indicators.Tema(symbol.TimeSeries.Select(item => item.Close).ToArray(), 20);
+            var kama20 = Indicators.KAMA(symbol.TimeSeries.Select(item => item.Close).ToArray(), 20);
         }
     }
 }

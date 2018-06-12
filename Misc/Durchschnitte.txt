@@ -1,0 +1,156 @@
+studyName("DEMA", "Period")
+studySimilarValues(1)
+studyPrecision(2)
+  
+# input
+n = integer("Period", 50)
+  
+# calculation
+dema = 2*ema(close, n) - ema(ema(close, n), n)
+  
+# plotting
+plotLine("line", dema)
+
+
+studyName("EMA", "Period")
+studySimilarValues(1)
+studyPrecision(2)
+  
+# input
+n = integer("Period", 50)
+  
+# calculation
+wf = 2 / ( n + 1)
+ema = nn(ema[1], close) + wf * nn(close - ema[1], 0)
+  
+# plotting
+plotLine("line", ema)
+
+
+studyName("RB")
+studySimilarValues(1)
+studyPrecision(2)
+  
+# calculation and plotting
+plotLine("RB01", ema(close, 9))("color", "#ff0000")("legend", 0)
+plotLine("RB02", ema(close, 12))("color", "#ff3300")("legend", 0)
+plotLine("RB03", ema(close, 15))("color", "#ff6600")("legend", 0)
+plotLine("RB04", ema(close, 18))("color", "#ff9900")("legend", 0)
+plotLine("RB05", ema(close, 21))("color", "#ffcc00")("legend", 0)
+plotLine("RB06", ema(close, 24))("color", "#ffff00")("legend", 0)
+plotLine("RB07", ema(close, 27))("color", "#ccff00")("legend", 0)
+plotLine("RB08", ema(close, 30))("color", "#99ff00")("legend", 0)
+plotLine("RB09", ema(close, 35))("color", "#66ff00")("legend", 0)
+plotLine("RB10", ema(close, 40))("color", "#33ff00")("legend", 0)
+plotLine("RB11", ema(close, 45))("color", "#00ff00")("legend", 0)
+plotLine("RB12", ema(close, 50))("color", "#00ff33")("legend", 0)
+plotLine("RB13", ema(close, 55))("color", "#00ff66")("legend", 0)
+plotLine("RB14", ema(close, 60))("color", "#00ff99")("legend", 0)
+plotLine("RB15", ema(close, 65))("color", "#00ffcc")("legend", 0)
+plotLine("RB16", ema(close, 70))("color", "#00ffff")("legend", 0)
+plotLine("RB17", ema(close, 75))("color", "#00ccff")("legend", 0)
+plotLine("RB18", ema(close, 80))("color", "#0099ff")("legend", 0)
+plotLine("RB19", ema(close, 85))("color", "#0066ff")("legend", 0)
+plotLine("RB20", ema(close, 90))("color", "#0033ff")("legend", 0)
+plotLine("RB21", ema(close, 100))("color", "#0000ff")("legend", 0)
+
+
+
+studyName("SMA", "Period")
+studySimilarValues(1)
+studyPrecision(2)
+
+# input
+n = integer("Period", 50)
+  
+# calculation
+sma = nn(sma[1], 0) + (close / n) - nn(close[n] / n, 0)
+ 
+# plotting
+plotLine("line", skip(sma, n - 1))
+
+
+studyName("TMA", "Period")
+studySimilarValues(1)
+studyPrecision(2)
+  
+# input
+n = integer("Period", 14)
+  
+# calculation
+a = n%2 == 0? n/2 : (n+1)/2
+b = n%2 == 0? a+1 : a
+tma = sma(sma(close, a), b)
+  
+# plotting
+plotLine("line", tma)
+
+
+studyName("TEMA", "Period")
+studySimilarValues(1)
+studyPrecision(2)
+  
+# input
+n = integer("Period", 14)
+  
+# calculation
+ema1 = ema(close, n)
+ema2 = ema(ema1, n)
+ema3 = ema(ema2, n)
+tema = 3*ema1 - 3*ema2 + ema3
+  
+# plotting
+plotLine("line", tema)
+
+
+
+studyName("VWMA", "Period")
+studySimilarValues(1)
+studyPrecision(2)
+   
+# input
+n = integer("Period", 28)
+   
+# calculation
+vwma = loop((i, res){ res+close[i]*volume[i] }, n) / sum(volume, n)
+   
+# plotting
+plotLine("line", vwma)
+
+
+studyName("WMA", "Period")
+studySimilarValues(1)
+studyPrecision(2)
+  
+# input
+n = integer("Period", 28)
+  
+# calculation
+wma = loop((i, res){ res+close[i]*(n-i) }, n) / ((pow(n, 2)-n)/2+n)
+  
+# plotting
+plotLine("line", wma)
+
+
+
+studyName("KAMA", "length")
+studySimilarValues(1)
+
+# input
+length = integer("length", 21)
+nFastend = 0.666
+nSlowend = 0.0645
+
+# calculation
+xPrice = close
+
+xvNoise = abs(xPrice - xPrice[1])
+nSignal = abs(xPrice - xPrice[length])
+nNoise = sum(xvNoise, length)
+
+nefRatio = nNoise != 0 ? nSignal / nNoise : 0
+nSmooth = pow(nefRatio * (nFastend - nSlowend) + nSlowend, 2) 
+nAMA = nn(nAMA[1]) + nSmooth * (xPrice - nn(nAMA[1]))
+
+# plotting
+plotLine("nAMA", nAMA)

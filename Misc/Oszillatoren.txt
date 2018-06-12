@@ -1,0 +1,266 @@
+studyName("AOS", "Period")
+studySimilarValues(0)
+studyPrecision(2)
+studyRange(-120, 120)
+  
+# input
+n = integer("Period", 10)
+  
+# calculation
+aroonUp = 100 * (n - offsetHighest(high, n)) / n
+aroonDown = 100 * (n - offsetLowest(low, n)) / n
+aos = aroonUp - aroonDown
+  
+# plotting
+plotThreshold("AOS", aos, 0, 0)("legend", 0)
+plotLine("AOS", aos)
+
+
+
+studyName("ARO", "Period")
+studySimilarValues(0)
+studyPrecision(2)
+studyRange(-10, 110)
+  
+# input
+n = integer("Period", 10)
+  
+# calculation
+aroonUp = 100 * (n - offsetHighest(high, n)) / n
+aroonDown = 100 * (n - offsetLowest(low, n)) / n
+  
+# plotting
+plotThreshold("Lines", 50, 70, 30)("legend", 0)
+plotLine("Aroon Up", aroonUp)
+plotLine("Aroon Down", aroonDown)
+
+
+studyName("DIX", "Period")
+studySimilarValues(0)
+studyPrecision(2)
+  
+# input
+n = integer("Period", 28)
+  
+# calculation
+mc = sum(close, n) / n
+dix = skip(100 *(close - mc) / mc, n-1)
+ 
+# plotting
+plotThreshold("threshold", dix, 0, 0)("legend", 0)
+plotLine("line", dix)
+
+
+
+studyName("DSSBR",
+  "Stochastic Period",
+  "Smoothing Period",
+  "Trigger Period"
+)
+studySimilarValues(0)
+studyPrecision(2)
+studyRange(-10, 110)
+   
+# input
+n = integer("Stochastic Period", 21)
+m = integer("Smoothing Period", 3)
+tr = integer("Trigger Period", 8)
+   
+# calculation
+hh = highest(high, n)
+ll = lowest(low, n)
+v1 = skip((hh == ll) ? 0 : (close - ll) / (hh - ll) * 100, n-1)
+smoothedV1 = ema(v1, m)
+  
+hh = highest(smoothedV1, n)
+ll = lowest(smoothedV1, n)
+v2 = skip((hh == ll) ? 0 : (smoothedV1 - ll) / (hh - ll) * 100, n-1)
+
+sV2 = ema(v2, m)
+ssV2 = ema(sV2, tr)
+   
+# plotting
+plotThreshold("threshold", sV2, 80, 20)("legend", 0)
+plotLine("sV2", sV2)
+plotLine("ssV2", ssV2)
+
+
+studyName("FSTOC", "%%K period", "%%D period")
+studySimilarValues(0)
+studyPrecision(2)
+studyRange(-10, 110)
+  
+# input
+n = integer("%%K period", 5)
+n2 = integer("%%D period", 3)
+  
+# calculation
+hh = highest(high, n)
+ll = lowest(low, n)
+fstoc = skip((hh == ll) ? 0 : (close - ll) / (hh - ll) * 100, n)
+smoothed = sma(fstoc, n2)
+  
+# plotting
+plotThreshold("threshold", fstoc, 80, 20)("legend", 0)
+plotLine("fstoc", fstoc)
+plotLine("smoothed", smoothed)
+
+
+studyName("MOM", "Period")
+studySimilarValues(0)
+studyPrecision(2)
+  
+# input
+n = integer("Period", 14)
+  
+# calculation
+mom = close - close[n]
+  
+# plotting
+plotThreshold("Threshold Intersection", mom, 0, 0)("legend", 0)
+plotLine("MOM", mom)
+
+
+studyName("OBOS", "Period")
+studySimilarValues(0)
+studyPrecision(2)
+studyRange(-10, 110)
+  
+# input
+n = integer("Period", 14)
+  
+# calculation
+denom = highest(high, n) - lowest(low, n)
+obos = denom == 0? 0 : (close - lowest(low, n)) / denom * 100
+  
+# plotting
+plotThreshold("Threshold Intersection", skip(obos, n-1), 80, 20)("legend", 0)
+plotLine("OBOS", skip(obos, n-1))
+
+
+studyName("ROC", "Period")
+studySimilarValues(0)
+studyPrecision(2)
+
+# input
+n = integer("Period", 12)
+  
+# calculation
+roc = close[n] == 0? 0 : 100 * (close - close[n]) / close[n]
+ 
+# plotting
+plotLine("line", roc)
+
+
+studyName("RSI", "Period")
+studySimilarValues(0)
+studyPrecision(2)
+studyRange(-10, 110)
+  
+# input
+n = integer("Period", 14)
+ 
+# calculation
+w = 1 / n
+ 
+up = close > close[1] ? close - close[1] : 0
+down = close > close[1] ? 0 : close[1] - close
+ 
+upSmoothed = up * w + (1-w) * nn(upSmoothed[1], 0)
+downSmoothed = down * w + (1-w) * nn(downSmoothed[1], 0)
+ 
+rsi = 100 - (100 / ((1 + upSmoothed / downSmoothed)))
+  
+# plotting
+plotThreshold("threshold", rsi, 70, 30)("legend", 0)
+plotLine("line", rsi)
+
+
+studyName("SSTOC", "%%K period", "%%D period", "2th %%D period")
+studySimilarValues(0)
+studyPrecision(2)
+studyRange(-10, 110)
+  
+# input
+n = integer("%%K period", 5)
+n2 = integer("%%D period", 5)
+n3 = integer("2th %%D period", 3)
+  
+# calculation
+hh = highest(high, n)
+ll = lowest(low, n)
+fstoc = (hh == ll) ? 0 : ((close - ll) / (hh - ll) * 100)
+sstoc = sma(fstoc, n2)
+smoothed = sma(sstoc, n3)
+ 
+# plotting
+plotThreshold("Threshold", sstoc, 80, 20)("legend", 0)
+plotLine("SSTOC", sstoc)
+plotLine("Smoothed", smoothed)
+
+
+studyName("PCR", "%%R period")
+studySimilarValues(0)
+studyPrecision(2)
+studyRange(-10, 110)
+  
+# input
+n = integer("%%R period", 14)
+  
+# calculation
+hhlld = highest(high, n) - lowest(low, n)
+pcr = skip(hhlld ? 100 - ((highest(high, n) - close) / hhlld) * 100 : 0, n-1)
+  
+# plotting
+plotThreshold("threshold", pcr, 80, 20)("legend", 0)
+plotLine("line", pcr)
+
+
+studyName("KDJ", "Period 1","Period 2")
+studySimilarValues(0)
+
+# input
+lenL = integer("Period 1",5) 
+lenS = integer("Period 2",3) 
+lenK = integer("%%K Smoothing",3) 
+
+# calculation
+pK = 100*((close - lowest(close, lenL))/(highest(high, lenL) - lowest(low, lenL))) 
+pD = 100*(highest(high, lenS)/lowest(low, lenS)) 
+pJ = (3 * pD) - (2 * pK) 
+
+pKema = ema(pK, lenK) 
+
+# plotting
+plotLine("pK", pK) 
+plotLine("pD", pD) 
+plotLine("pJ", pJ) 
+plotLine("pKema", pKema) 
+
+
+studyName("SMI","K","D")
+studySimilarValues(0)
+
+# input
+a = integer("K", 5)
+b = integer("D", 3)
+
+# calculation
+ll = lowest (low, a)
+hh = highest (high, a)
+diff = hh - ll
+
+rdiff = close - (hh+ll)/2
+
+avgrel = ema(ema(rdiff,b),b)
+avgdiff = ema(ema(diff,b),b)
+
+SMI = avgdiff != 0 ? (avgrel/(avgdiff/2)*100) : 0
+SMIsignal = ema(SMI,b)
+
+# plotting
+plotLine("SMI",SMI)
+plotLine("SMIsignal",SMIsignal)
+plotLine("Over Bought",40)
+plotLine("Over Sold",-40)
+plotLine("Zero Line",0)

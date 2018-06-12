@@ -15,6 +15,7 @@
             return double.IsNaN(value) ? defaultValue : value;
         }
 
+
         public static double[] Ema(double[] data, int period)
         {
             var wf = 2.0 / (period + 1);
@@ -23,11 +24,8 @@
 
             for (var index = data.Length - 1; index >= 0; index--)
             {
-                var valueAtIndex = data[index];
-                Debug.Assert(valueAtIndex > 0);
-
-                var value = nn(ema.At(index + 1), valueAtIndex);
-                var factor = nn(valueAtIndex - ema.At(index + 1), 0);
+                var value = nn(ema.At(index + 1), data[index]);
+                var factor = nn(data[index] - ema.At(index + 1), 0);
                 ema[index] = value + wf * factor;
             }
 
@@ -42,10 +40,7 @@
 
             for (var index = data.Length - 1; index >= 0; index--)
             {
-                var valueAtIndex = data[index];
-                Debug.Assert(valueAtIndex > 0);
-
-                sma[index] = nn(sma.At(index + 1), 0) + valueAtIndex / period - nn(data.At(index + period) / period, 0);
+                sma[index] = nn(sma.At(index + 1), 0) + data[index] / period - nn(data.At(index + period) / period, 0);
             }
 
             Debug.Assert(sma.Length == data.Length);
@@ -63,7 +58,7 @@
 
             for (var index = data.Length - 1; index >= 0; index--)
             {
-                dema[index] = 2 * ema[index] - emaOfEma[index];
+                dema[index] = 2*ema[index] - emaOfEma[index];
             }
 
             Debug.Assert(dema.Length == data.Length);

@@ -68,9 +68,12 @@
     </None>
     <None Include="stylecop.json" />
   </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
-    <Content Include="Misc\.gitattributes" />
-    <Content Include="Misc\.gitignore" />
+    <Content Include="Misc\Durchschnitte.txt" />
+    <Content Include="Misc\Oszillatoren.txt" />
+    <Content Include="Misc\Sonstige.txt" />
+    <Content Include="Misc\Trendfolger.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

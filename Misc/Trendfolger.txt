@@ -1,0 +1,116 @@
+studyName("BB", "Period", "Factor")
+studySimilarValues(1)
+studyPrecision(2)
+ 
+# input
+n = integer("Period", 20)
+f = float("Factor", 2)
+ 
+# calculation
+middle = sma(close, n)
+upper = middle + f * stdev(close, n)
+lower = middle - f * stdev(close, n)
+ 
+# plotting
+plotLine("upper", upper)
+plotLine("middle", middle)
+plotLine("lower", lower)
+plotBand("band", upper, lower)("legend", 0)
+
+
+studyName("CCI", "Period")
+studySimilarValues(0)
+studyPrecision(2)
+  
+# input
+n = integer("Period", 20)
+  
+# calculation
+tp = (high + low + close) / 3
+avg = sum(tp, n) / n
+sAvg = loop((i, res) { res+abs(tp[i] - avg) }, n) / n
+cci = (sAvg==0? 0 : ((tp - avg) / (0.015 * sAvg)))
+  
+# plotting
+plotThreshold("threshold", cci, 100, -100)("legend", 0)
+plotLine("line", cci)
+
+
+studyName("MACD", "Fast period", "Slow period", "Signal period")
+studySimilarValues(0)
+studyPrecision(2)
+ 
+# input
+p1 = integer("Fast period", 12)
+p2 = integer("Slow period", 26)
+pS = integer("Signal period", 9)
+  
+# calculation
+macd = ema(close, p1) - ema(close, p2)
+signal = ema(macd, pS)
+ 
+# plotting
+plotLine("line", macd)
+plotLine("signal", signal)
+plotHistogram("histogram", macd - signal)
+
+
+studyName("OBV")
+studySimilarValues(0)
+studyPrecision(0)
+  
+# calculation
+obv = nn(close < close[1]? obv[1]-volume : (close > close[1]? obv[1]+volume : obv[1]), 0)
+  
+# plotting
+plotLine("line", obv)
+
+
+studyName("PSAR", "Initial factor", "Increment", "Maximum factor")
+studySimilarValues(1)
+studyPrecision(2)
+  
+# input
+startAF = float("Initial factor", 0.02)
+stepAF = float("Increment", 0.02)
+maxAF = float("Maximum factor", 0.2)
+  
+# plotting
+plotCircles("circles", psar(high, low, startAF, stepAF, maxAF))
+
+
+studyName("RSL", "Period")
+studySimilarValues(0)
+studyPrecision(2)
+  
+# input
+n = integer("Period", 27)
+  
+# calculation
+rsl = close / sma(close, n)
+  
+# plotting
+plotLine("line", rsl)
+
+
+studyName("ST", "Period", "Factor")
+studySimilarValues(1)
+studyPrecision(2)
+ 
+# input
+p = integer("Period", 10)
+f = integer("Factor", 3)
+ 
+# calculation
+atr = sum(max(high - low, high - close[1], close[1] - low), p) / p
+up = (high + low)/2 - f*atr
+down = (high + low)/2 + f*atr
+ 
+trendUp = close[1] > trendUp[1] ? max(up, trendUp[1]) : up
+trendDown = close[1] < trendDown[1] ? min(down, trendDown[1]) : down
+trend = close > trendDown[1]? 1 : (close < trendUp[1]? -1 : nn(trend[1], 1))
+ 
+st = skip(trend == 1? trendUp : trendDown, p)
+ 
+# plotting
+plotDirectional("directional", st, trend)

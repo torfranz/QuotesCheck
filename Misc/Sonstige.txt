@@ -1,0 +1,205 @@
+studyName("ADX", "Period")
+studySimilarValues(0)
+studyPrecision(2)
+  
+# input
+n = integer("Period", 14)
+  
+# calculation
+tr = sum(max(high - low, high - close[1], low - close[1]), n)
+diPlus = sum(max(high - high[1], 0), n) / tr
+diMinus = sum(max(high <= high[1] ? low[1] - low : 0, 0), n) / tr
+dmi = abs((diPlus - diMinus) / (diPlus + diMinus)) * 100
+adx = sma(dmi, n)
+  
+# plotting
+plotLine("ADX", adx)
+
+
+studyName("ATR", "Period")
+studySimilarValues(0)
+studyPrecision(2)
+  
+# input
+n = integer("Period", 14)
+  
+# calculation
+atr = sum(max(high - low, high - close[1], close[1] - low), n) / n
+  
+# plotting
+plotLine("ATR", atr)
+
+
+studyName("DMI", "Period")
+studySimilarValues(0)
+studyPrecision(2)
+studyRange(-10, 110)
+  
+# input
+n = integer("Period", 14)
+  
+# calculation
+tr = sum(max(high - low, high - close[1], low - close[1]), n)
+diPlus = sum(max(high - high[1], 0), n) / tr
+diMinus = sum(max(high <= high[1] ? low[1] - low : 0, 0), n) / tr
+dmi = abs((diPlus - diMinus) / (diPlus + diMinus)) * 100
+  
+# plotting
+plotLine("DMI", dmi)
+plotLine("DI+", diPlus*100)
+plotLine("DI-", diMinus*100)
+
+
+studyName("HHLL", "Period")
+studySimilarValues(1)
+studyPrecision(2)
+  
+# input
+n = integer("Period", 10)
+  
+# calculation
+hh = highest(high, n)
+ll = lowest(low, n)
+  
+# plotting
+plotLine("Highest High", hh)
+plotLine("Lowest Low", ll)
+
+
+
+studyName("VOLA", "Period", "Periods/year")
+studySimilarValues(0)
+studyPrecision(2)
+ 
+# input
+n = integer("Period", 30)
+tp = integer("Periods/year", 250)
+ 
+# calculation
+dC = log(close) - log(close[1])
+mC = sum(dC, n) / n
+xC = sum(pow(dC, 2), n) - 2*sum(dC, n)*mC + n*pow(mC, 2)
+VOLA = sqrt(tp * xC / (n-1))
+ 
+# plotting
+plotLine("line", VOLA)
+
+
+studyName("MD", "Period")
+studySimilarValues(0)
+studyPrecision(2)
+  
+# input
+n = integer("Period", 28)
+  
+# calculation & plotting
+plotLine("line", md(close, n))
+
+
+studyName("Ratiocator")
+studySimilarValues(0)
+studyPrecision(2)
+ 
+# input
+A = timeSeries("Source A", 0)("close")
+B = timeSeries("Source B", 1)("close")
+ 
+# calculation
+ratio = (A/B - 1) * 100
+ 
+# plotting
+plotLine("line", ratio)
+
+
+studyName("STDEV", "Period")
+studySimilarValues(0)
+studyPrecision(4)
+
+# input
+n = integer("Period", 10)
+ 
+# calculation & plotting
+plotLine("line", stdev(close, n))
+
+
+studyName("TP")
+studySimilarValues(1)
+studyPrecision(2)
+ 
+# calculation
+tp = (close + high + low) / 3
+ 
+# plotting
+plotLine("line", tp)
+
+
+studyName("VPT")
+studySimilarValues(0)
+studyPrecision(0)
+  
+# calculation
+vpt = nn(vpt[1],0) + volume*((close-close[1])/close[1])
+   
+# plotting
+plotLine("line", vpt)
+
+
+studyName("ELR Bearish", "length")
+studySimilarValues(0)
+
+#input
+length = integer("length", 13)
+
+# calculation
+
+x = ema(close, length)
+
+
+# plotting
+plotHistogram("ELR", low-x, 0, 0)
+
+
+
+studyName("ELR Bullish", "length")
+studySimilarValues(0)
+
+#input
+length = integer("length", 13)
+
+# calculation
+
+x = ema(close, length)
+
+
+# plotting
+plotHistogram("ELR", high-x, 0, 0)
+
+
+
+studyName("ELSZ", "CoEff", "LookBackLength")
+studySimilarValues(1)
+
+# input
+coeff = float("CoEff", 2.5)
+lookbackLength = integer("LookBackLength", 15)
+
+# calculation
+countShort = high > high[1] ? 1 : 0
+diffShort = high > high[1] ? high - high[1] : 0
+totalCountShort = sum(countShort, lookbackLength)
+totalSumShort = sum(diffShort, lookbackLength)
+penAvgShort = (totalSumShort / totalCountShort)
+safetyShort = high[1] + (penAvgShort[1] * coeff)
+finalSafetyShort = min(min(safetyShort, safetyShort[1]), safetyShort[2])
+
+count = low < low[1] ? 1 : 0
+diff = low < low[1] ? low[1] - low : 0
+totalCount = sum(count, lookbackLength)
+totalSum = sum(diff, lookbackLength)
+penAvg = (totalSum / totalCount)
+safety = low[1] - (penAvg[1] * coeff)
+finalSafetyLong = max(max(safety, safety[1]), safety[2])
+
+# plotting
+plotLine("Short Stop", finalSafetyShort)
+plotLine("Long Stop", finalSafetyLong)

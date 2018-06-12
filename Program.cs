@@ -1,40 +1,22 @@
 ﻿namespace QuotesCheck
 {
-    using System;
+    using System.Globalization;
+    using System.Linq;
+    using System.Threading;
 
-    using Avapi;
-    using Avapi.AvapiEMA;
-
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
-            Console.WriteLine("Updating symbol provider");
+            // use always invariant culture
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+
             var symbolProvider = new SymbolProvider();
-            symbolProvider.UpdateReference();
+            var dataProvider = new DataProvider();
 
-
-            return;
-            // Creating the connection object
-            IAvapiConnection connection = AvapiConnection.Instance;
-
-            // Set up the connection and pass the API_KEY provided by alphavantage.co
-            connection.Connect("XS7IY6V9YRY2SL15");
-
-            // Get the TIME_SERIES_DAILY query object
-            var time_series_daily =
-                connection.GetQueryObject_EMA();
-
-            // Perform the TIME_SERIES_DAILY request and get the result
-            var time_series_dailyResponse =
-            time_series_daily.Query(
-                 "A", Const_EMA.EMA_interval.daily, 20, Const_EMA.EMA_series_type.close);
-
-            // Printout the results
-            Console.WriteLine("******** RAW DATA TIME_SERIES_DAILY ********");
-            Console.WriteLine(time_series_dailyResponse.RawData);
-
-            
+            var symbol = symbolProvider.LookUpISIN("DE000A0D9PT0");
+            var dailyAdjusted = dataProvider.GetDailyData(symbol);
+            var ema20 = Indicators.Ema(dailyAdjusted.Select(item => item.Close).ToArray(), 20);
         }
     }
 }

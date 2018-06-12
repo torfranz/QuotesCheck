@@ -7,14 +7,7 @@
     {
         private static double At(this double[] data, int index)
         {
-            try
-            {
-                return data[index];
-            }
-            catch (IndexOutOfRangeException)
-            {
-                return double.NaN;
-            }
+            return index >=0 && index < data.Length ? data[index]: double.NaN;
         }
 
         private static double nn(double value, double defaultValue)

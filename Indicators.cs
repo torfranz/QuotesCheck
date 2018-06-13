@@ -5,29 +5,6 @@
 
     internal static class Indicators
     {
-        private static double At(this double[] data, int index)
-        {
-            return index >= 0 && index < data.Length ? data[index] : double.NaN;
-        }
-
-        private static double At(this int[] data, int index)
-        {
-            return index >= 0 && index < data.Length ? data[index] : double.NaN;
-        }
-
-        private static double nn(double value, double defaultValue = 0)
-        {
-            return double.IsNaN(value) ? defaultValue : value;
-        }
-
-        private static double[] Create(int length, double value = double.NaN)
-        {
-            var values = new double[length];
-
-            for (var index = length - 1; index >= 0; index--) values[index] = value;
-            return values;
-        }
-
         public static double[] Ema(double[] data, int period)
         {
             // wf = 2 / (n + 1)
@@ -38,7 +15,9 @@
             var ema = Create(data.Length);
 
             for (var index = data.Length - 1; index >= 0; index--)
+            {
                 ema[index] = nn(ema.At(index + 1), data[index]) + wf * nn(data[index] - ema.At(index + 1));
+            }
 
             Debug.Assert(ema.Length == data.Length);
             return ema;
@@ -50,7 +29,9 @@
             var sma = Create(data.Length);
 
             for (var index = data.Length - 1; index >= 0; index--)
+            {
                 sma[index] = nn(sma.At(index + 1)) + data[index] / period - nn(data.At(index + period) / period);
+            }
 
             Debug.Assert(sma.Length == data.Length);
             return sma;
@@ -65,7 +46,10 @@
 
             var dema = Create(data.Length);
 
-            for (var index = data.Length - 1; index >= 0; index--) dema[index] = 2 * ema1[index] - ema2[index];
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                dema[index] = 2 * ema1[index] - ema2[index];
+            }
 
             Debug.Assert(dema.Length == data.Length);
             return dema;
@@ -130,7 +114,10 @@
 
             var tema = Create(data.Length);
 
-            for (var index = data.Length - 1; index >= 0; index--) tema[index] = 3 * ema1[index] - 3 * ema2[index] + ema3[index];
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                tema[index] = 3 * ema1[index] - 3 * ema2[index] + ema3[index];
+            }
 
             Debug.Assert(tema.Length == data.Length);
             return tema;
@@ -149,24 +136,30 @@
 
             var tma = Create(data.Length);
 
-            for (var index = data.Length - 1; index >= 0; index--) tma[index] = sma[index];
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                tma[index] = sma[index];
+            }
 
             Debug.Assert(tma.Length == data.Length);
             return tma;
         }
 
-        private static double Sum(double[] data, int startIndex, int length)
+        public static double[] Rsl(double[] data, int period)
         {
-            var result = 0.0;
-            for (var index = startIndex; index < startIndex + length; index++) result += data.At(index);
-            return result;
-        }
+            // rsl = close / sma(close, n)
+            
+            var sma = Sma(data, period);
 
-        private static double Sum(int[] data, int startIndex, int length)
-        {
-            var result = 0.0;
-            for (var index = startIndex; index < startIndex + length; index++) result += data.At(index);
-            return result;
+            var rsl = Create(data.Length);
+
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                rsl[index] = data[index] / sma[index];
+            }
+
+            Debug.Assert(rsl.Length == data.Length);
+            return rsl;
         }
 
         public static double[] KAMA(double[] data, int length)
@@ -209,6 +202,55 @@
 
             Debug.Assert(kama.Length == data.Length);
             return kama;
+        }
+
+        private static double At(this double[] data, int index)
+        {
+            return (index >= 0) && (index < data.Length) ? data[index] : double.NaN;
+        }
+
+        private static double At(this int[] data, int index)
+        {
+            return (index >= 0) && (index < data.Length) ? data[index] : double.NaN;
+        }
+
+        private static double nn(double value, double defaultValue = 0)
+        {
+            return double.IsNaN(value) ? defaultValue : value;
+        }
+
+        private static double[] Create(int length, double value = double.NaN)
+        {
+            var values = new double[length];
+
+            for (var index = length - 1; index >= 0; index--)
+            {
+                values[index] = value;
+            }
+
+            return values;
+        }
+
+        private static double Sum(double[] data, int startIndex, int length)
+        {
+            var result = 0.0;
+            for (var index = startIndex; index < startIndex + length; index++)
+            {
+                result += data.At(index);
+            }
+
+            return result;
+        }
+
+        private static double Sum(int[] data, int startIndex, int length)
+        {
+            var result = 0.0;
+            for (var index = startIndex; index < startIndex + length; index++)
+            {
+                result += data.At(index);
+            }
+
+            return result;
         }
     }
 }

@@ -34,6 +34,7 @@
             var atr = Indicators.ATR(symbol, 20);
             var hh = Indicators.HH(symbol, 20);
             var ll = Indicators.LL(symbol, 20);
+            var vola = Indicators.VOLA(symbol, SourceType.Close, 30, 250);
 
             var md = Indicators.MD(symbol, SourceType.Close, 20); // --> not correct
         }

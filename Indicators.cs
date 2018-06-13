@@ -2,7 +2,6 @@
 {
     using System;
     using System.Diagnostics;
-    using System.Linq;
 
     internal static class Indicators
     {
@@ -56,6 +55,11 @@
             return TEMA(symbol.Data(sourceType), period);
         }
 
+        public static double[] VOLA(SymbolInformation symbol, SourceType sourceType, int period, int periodYear)
+        {
+            return VOLA(symbol.Data(sourceType), period, periodYear);
+        }
+
         public static double[] HH(SymbolInformation symbol, int period)
         {
             return HH(symbol.High, period);
@@ -87,7 +91,7 @@
             var close = symbol.Close;
 
             var atr = ATR(symbol, period);
-            
+
             var trendUp = Create(close.Length);
             var trendDown = Create(close.Length);
             var trend = new int[close.Length];
@@ -103,6 +107,7 @@
 
                 st[index] = trend[index] == 1 ? trendUp[index] : trendDown[index];
             }
+
             return st;
         }
 
@@ -281,7 +286,7 @@
             {
                 workingData[i] = data.At(startIndex + i);
             }
-            
+
             Array.Sort(workingData);
             return workingData.Length % 2 == 0
                        ? (workingData[workingData.Length / 2 - 1] + workingData[workingData.Length / 2]) / 2
@@ -423,6 +428,38 @@
 
             Debug.Assert(tema.Length == data.Length);
             return tema;
+        }
+
+        private static double[] VOLA(double[] data, int period, int periodYear)
+        {
+            // # input
+            // n = integer("Period", 30)
+            // tp = integer("Periods/year", 250)
+
+            // # calculation
+            // dC = log(close) - log(close[1])
+            // mC = sum(dC, n) / n
+            // xC = sum(pow(dC, 2), n) - 2 * sum(dC, n) * mC + n * pow(mC, 2)
+            // VOLA = sqrt(tp * xC / (n - 1))
+
+            var dC = Create(data.Length);
+
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                dC[index] = Math.Log(data[index]) - Math.Log(data.At(index + 1));
+            }
+
+            var vola = Create(data.Length);
+
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                var mC = Sum(dC, index, period) / period;
+                var xC = Sum(dC, index, period, summand => Math.Pow(summand, 2)) - 2 * Sum(dC, index, period) * mC + period * Math.Pow(mC, 2);
+                vola[index] = Math.Sqrt(periodYear * xC / (period - 1));
+            }
+
+            Debug.Assert(vola.Length == data.Length);
+            return vola;
         }
 
         private static double[] HH(double[] data, int period)
@@ -628,12 +665,12 @@
             return values;
         }
 
-        private static double Sum(double[] data, int startIndex, int length)
+        private static double Sum(double[] data, int startIndex, int length, Func<double, double> summandFunc = null)
         {
             var result = 0.0;
             for (var index = startIndex; index < startIndex + length; index++)
             {
-                result += data.At(index);
+                result += summandFunc?.Invoke(data.At(index)) ?? data.At(index);
             }
 
             return result;

@@ -25,6 +25,11 @@
             return VWMA(symbol.Data(sourceType), symbol.Volume, period);
         }
 
+        public static double[] VPT(SymbolInformation symbol, SourceType sourceType)
+        {
+            return VPT(symbol.Data(sourceType), symbol.Volume);
+        }
+
         public static double[] OBV(SymbolInformation symbol, SourceType sourceType)
         {
             return OBV(symbol.Data(sourceType), symbol.Volume);
@@ -258,6 +263,21 @@
 
             Debug.Assert(vwma.Length == data.Length);
             return vwma;
+        }
+
+        private static double[] VPT(double[] data, int[] volume)
+        {
+            // vpt = nn(vpt[1],0) + volume*((close-close[1])/close[1])
+
+            var vpt = Create(data.Length);
+
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                vpt[index] = nn(vpt.At(index + 1)) + volume[index] * ((data[index] - data.At(index + 1)) / data.At(index + 1));
+            }
+
+            Debug.Assert(vpt.Length == data.Length);
+            return vpt;
         }
 
         private static double[] OBV(double[] data, int[] volume)

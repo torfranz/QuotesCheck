@@ -30,6 +30,7 @@
             var cci = Indicators.CCI(symbol, 20);
             var stdev = Indicators.STDEV(symbol, SourceType.Close, 20);
             var (bullish, bearish) = Indicators.ELR(symbol, 20);
+            var vpt = Indicators.VPT(symbol, SourceType.Close);
         }
     }
 }

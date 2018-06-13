@@ -89,6 +89,9 @@
                 return;
             }
 
+            // remove the first entry to get it always updated
+            this.TimeSeries.RemoveAt(0);
+
             // check how long ago our latest data point is away
             var daysSpan = (DateTime.Now - this.TimeSeries[0].Day).Days;
             var newSeries = this.dataProvider.GetTimeSeries(

@@ -65,12 +65,15 @@
             var dataPath = Path.Combine(Folder, $"{isin}.json");
             if (File.Exists(dataPath))
             {
-                var symbol = JsonConvert.DeserializeObject<SymbolInformation>(File.ReadAllText(dataPath), this.jsonSettings);
+                var symbol = this.LoadSymbolData(dataPath);
 
                 // are time series still current, no => update
                 if (symbol.TimeSeries == null || symbol.TimeSeries[0].Day.DayOfYear < DateTime.Now.DayOfYear
                                               || symbol.TimeSeries[0].Day.Year < DateTime.Now.Year)
+                {
                     symbol.UpdateTimeSeries();
+                    this.SaveSymbolData(dataPath, symbol);
+                }
 
                 this.Symbols.Add(isin, symbol);
                 return symbol;
@@ -80,12 +83,22 @@
                 // nothing exists so far, create new 
                 var symbol = this.EmptySymbols.First(item => Equals(item.ISIN.ToUpperInvariant(), isin));
                 symbol.UpdateTimeSeries();
+                this.SaveSymbolData(dataPath, symbol);
 
                 this.Symbols.Add(isin, symbol);
 
-                File.WriteAllText(dataPath, JsonConvert.SerializeObject(symbol, this.jsonSettings));
                 return symbol;
             }
+        }
+
+        private void SaveSymbolData(string dataPath, SymbolInformation symbol)
+        {
+            File.WriteAllText(dataPath, JsonConvert.SerializeObject(symbol, this.jsonSettings));
+        }
+
+        private SymbolInformation LoadSymbolData(string dataPath)
+        {
+            return JsonConvert.DeserializeObject<SymbolInformation>(File.ReadAllText(dataPath), this.jsonSettings);
         }
     }
 }

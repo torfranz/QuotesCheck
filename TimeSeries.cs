@@ -15,5 +15,10 @@
         public int Volume { get; set; }
 
         public DateTime Day { get; set; }
+
+        public override string ToString()
+        {
+            return $"{this.Day:d} - O: {this.Open:F} C: {this.Close:F} H: {this.High:F} L: {this.Low:F}";
+        }
     }
 }

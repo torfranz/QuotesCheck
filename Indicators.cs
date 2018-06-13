@@ -98,6 +98,28 @@
             return tema;
         }
 
+        public static double[] Tma(double[] data, int period)
+        {
+            // a = n%2 == 0? n/2 : (n+1)/2
+            // b = n % 2 == 0 ? a + 1 : a
+            // tma = sma(sma(close, a), b)
+
+            var a = period % 2 == 0 ? period / 2 : (period + 1) / 2;
+            var b = period % 2 == 0 ? a + 1 : a;
+
+            var sma = Sma(Sma(data, a), b);
+
+            var tma = Create(data.Length);
+
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                tma[index] = sma[index];
+            }
+
+            Debug.Assert(tma.Length == data.Length);
+            return tma;
+        }
+
         private static double Sum(double[] data, int startIndex, int length)
         {
             var result = 0.0;

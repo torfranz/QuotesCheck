@@ -1,6 +1,11 @@
 ﻿namespace QuotesCheck
 {
+    using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Runtime.CompilerServices;
+
+    using Avapi.AvapiTIME_SERIES_DAILY;
 
     using Newtonsoft.Json;
 
@@ -32,7 +37,26 @@
 
         public void UpdateTimeSeries()
         {
-            this.TimeSeries = this.dataProvider.UpdateTimeSeries(this);
+            // do we have any data at all so far?
+            if (this.TimeSeries == null)
+            {
+                this.TimeSeries = this.dataProvider.GetTimeSeries(this);
+                return;
+            }
+            
+            // check how long ago our latest data point is away
+            var daysSpan = (DateTime.Now - this.TimeSeries[0].Day).Days;
+            var newSeries = this.dataProvider.GetTimeSeries(this, daysSpan > 90 ? Const_TIME_SERIES_DAILY.TIME_SERIES_DAILY_outputsize.full : Const_TIME_SERIES_DAILY.TIME_SERIES_DAILY_outputsize.compact);
+
+            for (var index = newSeries.Count - 1; index >= 0; index--)
+            {
+                daysSpan = (newSeries[index].Day - this.TimeSeries[0].Day).Days;
+                Debug.Assert(daysSpan <= 1);
+                if (daysSpan == 1)
+                {
+                    this.TimeSeries.Insert(0, newSeries[index]);
+                }
+            }
         }
     }
 }

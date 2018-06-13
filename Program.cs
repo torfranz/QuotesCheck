@@ -20,6 +20,7 @@
             var kama20 = Indicators.KAMA(symbol.TimeSeries.Select(item => item.Close).ToArray(), 20);
             var tma20 = Indicators.Tma(symbol.TimeSeries.Select(item => item.Close).ToArray(), 20);
             var vwma20 = Indicators.Vwma(symbol.TimeSeries.Select(item => item.Close).ToArray(), symbol.TimeSeries.Select(item => item.Volume).ToArray(), 20);
+            var wma20 = Indicators.Wma(symbol.TimeSeries.Select(item => item.Close).ToArray(), 20);
         }
     }
 }

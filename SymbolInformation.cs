@@ -3,8 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
-    using System.Runtime.CompilerServices;
-
+    
     using Avapi.AvapiTIME_SERIES_DAILY;
 
     using Newtonsoft.Json;

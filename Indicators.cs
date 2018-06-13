@@ -82,9 +82,9 @@
                 var divisor = Sum(volume, index, period);
 
                 var res = 0.0;
-                for (var loopIndex = index; loopIndex < index + period; loopIndex++)
+                for (var i = 0; i < period; i++)
                 {
-                    res += data.At(loopIndex) * volume.At(loopIndex);
+                    res += data.At(index + i) * volume.At(index + i);
                 }
 
                 vwma[index] = res / divisor;
@@ -92,6 +92,29 @@
 
             Debug.Assert(vwma.Length == data.Length);
             return vwma;
+        }
+
+        public static double[] Wma(double[] data, int n)
+        {
+            // wma = loop((i, res){ res+close[i]*(n-i) }, n) / ((pow(n, 2)-n)/2+n)
+
+            var wma = Create(data.Length);
+
+            var divisor = (Math.Pow(n, 2) - n) / 2 + n;
+
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                var res = 0.0;
+                for (var i = 0; i < n; i++)
+                {
+                    res += data.At(index + i) * (n - i);
+                }
+
+                wma[index] = res / divisor;
+            }
+
+            Debug.Assert(wma.Length == data.Length);
+            return wma;
         }
 
         public static double[] Tema(double[] data, int period)

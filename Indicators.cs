@@ -2,6 +2,7 @@
 {
     using System;
     using System.Diagnostics;
+    using System.Linq;
 
     internal static class Indicators
     {
@@ -75,20 +76,14 @@
             var low = symbol.Low;
             var close = symbol.Close;
 
-            var max = Create(close.Length);
-            for (var index = close.Length - 1; index >= 0; index--)
-            {
-                max[index] = Math.Max(Math.Max(high[index] - low[index], high[index] - close.At(index + 1)), close.At(index + 1) - low[index]);
-            }
-
-            var atr = Create(close.Length);
+            var atr = ATR(symbol, period);
+            
             var trendUp = Create(close.Length);
             var trendDown = Create(close.Length);
             var trend = new int[close.Length];
             var st = Create(close.Length);
             for (var index = close.Length - 1; index >= 0; index--)
             {
-                atr[index] = Sum(max, index, period) / period;
                 var up = (high[index] + low[index]) / 2 - factor * atr[index];
                 var down = (high[index] + low[index]) / 2 + factor * atr[index];
 
@@ -98,7 +93,6 @@
 
                 st[index] = trend[index] == 1 ? trendUp[index] : trendDown[index];
             }
-
             return st;
         }
 

@@ -78,6 +78,24 @@
             return vwma;
         }
 
+        public static double[] Obv(double[] data, int[] volume)
+        {
+            // obv = nn(close < close[1] ? obv[1]-volume : (close > close[1] ? obv[1]+volume : obv[1]), 0)
+
+            var obv = Create(data.Length);
+
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                obv[index] = nn(
+                    data[index] < data.At(index + 1)
+                        ? obv.At(index + 1) - volume[index]
+                        : (data[index] > data.At(index + 1) ? obv.At(index + 1) + volume[index] : obv.At(index + 1)));
+            }
+
+            Debug.Assert(obv.Length == data.Length);
+            return obv;
+        }
+
         public static double[] Wma(double[] data, int n)
         {
             // wma = loop((i, res){ res+close[i]*(n-i) }, n) / ((pow(n, 2)-n)/2+n)
@@ -148,7 +166,7 @@
         public static double[] Rsl(double[] data, int period)
         {
             // rsl = close / sma(close, n)
-            
+
             var sma = Sma(data, period);
 
             var rsl = Create(data.Length);

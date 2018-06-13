@@ -167,6 +167,12 @@
             return SMA(dmi, period);
         }
 
+        public static double[] ROC(SymbolInformation symbol, SourceType sourceType, int period)
+        {
+            return ROC(symbol.Data(sourceType), period);
+        }
+
+
         public static (double[] DMI, double[] DIPlus, double[] DIMinus) DMI(SymbolInformation symbol, int period)
         {
             // n = integer("Period", 14)
@@ -228,7 +234,7 @@
                 }
 
                 var sAvg = res / period;
-                cci[index] = sAvg == 0 ? 0 : (tp[index] - avg) / (0.015 * sAvg);
+                cci[index] = (tp[index] - avg) / (0.015 * sAvg);
             }
 
             return cci;
@@ -505,6 +511,21 @@
             return tema;
         }
 
+        private static double[] ROC(double[] data, int period)
+        {
+            // roc = close[n] == 0? 0 : 100 * (close - close[n]) / close[n]
+
+            var roc = Create(data.Length);
+
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                roc[index] = 100 * (data[index] - data.At(index + period)) / data.At(index + period);
+            }
+
+            Debug.Assert(roc.Length == data.Length);
+            return roc;
+        }
+
         private static double[] VOLA(double[] data, int period, int periodYear)
         {
             // # input
@@ -685,7 +706,7 @@
                 nSignal[index] = Math.Abs(xPrice[index] - xPrice.At(index + length));
                 var nNoise = Sum(xvNoise, index, length);
 
-                var nefRatio = nNoise != 0 ? nSignal[index] / nNoise : 0;
+                var nefRatio = nSignal[index] / nNoise;
                 var nSmooth = Math.Pow(nefRatio * (nFastend - nSlowend) + nSlowend, 2);
 
                 kama[index] = nn(kama.At(index + 1)) + nSmooth * (xPrice[index] - nn(kama.At(index + 1)));

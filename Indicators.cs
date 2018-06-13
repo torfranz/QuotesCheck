@@ -191,28 +191,20 @@
             }
 
             var atr = Create(close.Length);
-            for (var index = close.Length - 1; index >= 0; index--)
-            {
-                atr[index] = Sum(max, index, period) / period;
-            }
-
             var trendUp = Create(close.Length);
             var trendDown = Create(close.Length);
             var trend = new int[close.Length];
-
+            var st = Create(close.Length);
             for (var index = close.Length - 1; index >= 0; index--)
             {
+                atr[index] = Sum(max, index, period) / period;
                 var up = (high[index] + low[index]) / 2 - factor * atr[index];
                 var down = (high[index] + low[index]) / 2 + factor * atr[index];
 
                 trendUp[index] = close.At(index + 1) > trendUp.At(index + 1) ? Math.Max(up, trendUp.At(index + 1)) : up;
                 trendDown[index] = close.At(index + 1) < trendDown.At(index + 1) ? Math.Min(down, trendDown.At(index + 1)) : down;
                 trend[index] = close[index] > trendDown.At(index + 1) ? 1 : (close[index] < trendUp.At(index + 1) ? -1 : trend.At(index + 1, 1));
-            }
 
-            var st = Create(close.Length);
-            for (var index = close.Length - 1; index >= 0; index--)
-            {
                 st[index] = trend[index] == 1 ? trendUp[index] : trendDown[index];
             }
 
@@ -240,6 +232,31 @@
 
             Debug.Assert(tma.Length == data.Length);
             return tma;
+        }
+
+        public static (double[] Upper, double[] Lower, double[] Middle) BB(double[] data, int period, double factor)
+        {
+            // # input
+            // n = integer("Period", 20)
+            // f = float("Factor", 2)
+
+            // # calculation
+            // middle = sma(close, n)
+            // upper = middle + f * stdev(close, n)
+            // lower = middle - f * stdev(close, n)
+
+            var middle = Sma(data, period);
+            var upper = Create(data.Length);
+            var lower = Create(data.Length);
+
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                upper[index] = middle[index] + factor * Stdev(data, index, period);
+                lower[index] = middle[index] - factor * Stdev(data, index, period);
+            }
+
+            Debug.Assert(middle.Length == data.Length);
+            return (upper, lower, middle);
         }
 
         public static double[] Rsl(double[] data, int period)
@@ -299,6 +316,24 @@
 
             Debug.Assert(kama.Length == data.Length);
             return kama;
+        }
+
+        private static double Stdev(double[] data, int startIndex, int length)
+        {
+            var sum = 0.0;
+            for (var index = startIndex; index < startIndex + length; index++)
+            {
+                sum += data.At(index);
+            }
+
+            var average = sum / length;
+            var sumOfDerivation = 0.0;
+            for (var index = startIndex; index < startIndex + length; index++)
+            {
+                sumOfDerivation += (data.At(index) - average) * (data.At(index) - average);
+            }
+
+            return Math.Sqrt(sumOfDerivation / (length - 1));
         }
 
         private static double At(this double[] data, int index)

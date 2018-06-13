@@ -24,6 +24,7 @@
             var rsl20 = Indicators.Rsl(symbol.TimeSeries.Select(item => item.Close).ToArray(), 20);
             var obv20 = Indicators.Obv(symbol.TimeSeries.Select(item => item.Close).ToArray(), symbol.TimeSeries.Select(item => item.Volume).ToArray());
             var (macd, signal) = Indicators.Macd(symbol.TimeSeries.Select(item => item.Close).ToArray(), 12, 26, 9);
+            var st = Indicators.ST(symbol.TimeSeries, 50, 3);
         }
     }
 }

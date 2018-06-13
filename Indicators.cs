@@ -1,7 +1,9 @@
 ﻿namespace QuotesCheck
 {
     using System;
+    using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Linq;
 
     internal static class Indicators
     {
@@ -125,7 +127,7 @@
             // signal = ema(macd, pS)
 
             var macd = Create(data.Length);
-            
+
             var emaFast = Ema(data, fastPeriod);
             var emaSlow = Ema(data, slowPeriod);
 
@@ -136,7 +138,6 @@
                 macd[index] = emaFast[index] - emaSlow[index];
             }
 
-            
             Debug.Assert(macd.Length == data.Length);
             return (macd, Ema(macd, signalPeriod));
         }
@@ -161,6 +162,62 @@
 
             Debug.Assert(tema.Length == data.Length);
             return tema;
+        }
+
+        public static double[] ST(IList<TimeSeries> series, int period, double factor)
+        {
+            // p = integer("Period", 10)
+            // f = integer("Factor", 3)
+
+            // # calculation
+            // atr = sum(max(high - low, high - close[1], close[1] - low), p) / p
+            // up = (high + low) / 2 - f * atr
+            // down = (high + low) / 2 + f * atr
+
+            // trendUp = close[1] > trendUp[1] ? max(up, trendUp[1]) : up
+            // trendDown = close[1] < trendDown[1] ? min(down, trendDown[1]) : down
+            // trend = close > trendDown[1] ? 1 : (close < trendUp[1] ? -1 : nn(trend[1], 1))
+
+            // st = skip(trend == 1 ? trendUp : trendDown, p)
+
+            var high = series.Select(item => item.High).ToArray();
+            var low = series.Select(item => item.Low).ToArray();
+            var close = series.Select(item => item.Close).ToArray();
+
+            var max = Create(close.Length);
+            for (var index = close.Length - 1; index >= 0; index--)
+            {
+                max[index] = Math.Max(Math.Max(high[index] - low[index], high[index] - close.At(index + 1)), close.At(index + 1) - low[index]);
+            }
+
+            var atr = Create(close.Length);
+            for (var index = close.Length - 1; index >= 0; index--)
+            {
+                atr[index] = Sum(max, index, period) / period;
+            }
+
+            var trendUp = Create(close.Length);
+            var trendDown = Create(close.Length);
+            var trend = new int[close.Length];
+
+            for (var index = close.Length - 1; index >= 0; index--)
+            {
+                var up = (high[index] + low[index]) / 2 - factor * atr[index];
+                var down = (high[index] + low[index]) / 2 + factor * atr[index];
+
+                trendUp[index] = close.At(index + 1) > trendUp.At(index + 1) ? Math.Max(up, trendUp.At(index + 1)) : up;
+                trendDown[index] = close.At(index + 1) < trendDown.At(index + 1) ? Math.Min(down, trendDown.At(index + 1)) : down;
+                trend[index] = close[index] > trendDown.At(index + 1) ? 1 : (close[index] < trendUp.At(index + 1) ? -1 : trend.At(index + 1, 1));
+            }
+
+            var st = Create(close.Length);
+            for (var index = close.Length - 1; index >= 0; index--)
+            {
+                st[index] = trend[index] == 1 ? trendUp[index] : trendDown[index];
+            }
+
+            Debug.Assert(st.Length == series.Count);
+            return st;
         }
 
         public static double[] Tma(double[] data, int period)
@@ -249,9 +306,9 @@
             return (index >= 0) && (index < data.Length) ? data[index] : double.NaN;
         }
 
-        private static double At(this int[] data, int index)
+        private static int At(this int[] data, int index, int defaultValue = 0)
         {
-            return (index >= 0) && (index < data.Length) ? data[index] : double.NaN;
+            return (index >= 0) && (index < data.Length) ? data[index] : defaultValue;
         }
 
         private static double nn(double value, double defaultValue = 0)

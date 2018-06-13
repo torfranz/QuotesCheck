@@ -3,7 +3,8 @@
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
-    
+    using System.Linq;
+
     using Avapi.AvapiTIME_SERIES_DAILY;
 
     using Newtonsoft.Json;
@@ -12,6 +13,35 @@
     internal class SymbolInformation
     {
         private readonly DataProvider dataProvider = new DataProvider();
+
+        private double[] close;
+
+        private double[] open;
+
+        private double[] high;
+
+        private double[] low;
+
+        private int[] volume;
+
+        [JsonProperty]
+        public IList<TimeSeries> TimeSeries { get; private set; } = new List<TimeSeries>();
+
+        public string CompanyName => this.company_name;
+
+        public string ISIN => this.isin;
+
+        public string Symbol => $"{this.bats_name.Substring(0, this.bats_name.Length - 1)}.{this.reuters_exchange_code}";
+
+        public double[] Close => this.close ?? (this.close = this.TimeSeries.Select(item => item.Close).ToArray());
+
+        public double[] Open => this.open ?? (this.open = this.TimeSeries.Select(item => item.Open).ToArray());
+
+        public double[] High => this.high ?? (this.high = this.TimeSeries.Select(item => item.High).ToArray());
+
+        public double[] Low => this.low ?? (this.low = this.TimeSeries.Select(item => item.Low).ToArray());
+
+        public int[] Volume => this.volume ?? (this.volume = this.TimeSeries.Select(item => item.Volume).ToArray());
 
         [JsonProperty]
         private string company_name { get; set; }
@@ -25,27 +55,27 @@
         [JsonProperty]
         private string reuters_exchange_code { get; set; }
 
-        public string CompanyName => this.company_name;
-
-        public string ISIN => this.isin;
-
-        public string Symbol => $"{this.bats_name.Substring(0, this.bats_name.Length - 1)}.{this.reuters_exchange_code}";
-
-        [JsonProperty]
-        public IList<TimeSeries> TimeSeries { get; private set; }
-
         public void UpdateTimeSeries()
         {
+            // reset extracted series
+            this.open = null;
+            this.close = null;
+            this.high = null;
+            this.low = null;
+            this.volume = null;
+
             // do we have any data at all so far?
-            if (this.TimeSeries == null)
+            if (this.TimeSeries.Count == 0)
             {
                 this.TimeSeries = this.dataProvider.GetTimeSeries(this);
                 return;
             }
-            
+
             // check how long ago our latest data point is away
             var daysSpan = (DateTime.Now - this.TimeSeries[0].Day).Days;
-            var newSeries = this.dataProvider.GetTimeSeries(this, daysSpan > 90 ? Const_TIME_SERIES_DAILY.TIME_SERIES_DAILY_outputsize.full : Const_TIME_SERIES_DAILY.TIME_SERIES_DAILY_outputsize.compact);
+            var newSeries = this.dataProvider.GetTimeSeries(
+                this,
+                daysSpan > 90 ? Const_TIME_SERIES_DAILY.TIME_SERIES_DAILY_outputsize.full : Const_TIME_SERIES_DAILY.TIME_SERIES_DAILY_outputsize.compact);
 
             for (var index = newSeries.Count - 1; index >= 0; index--)
             {

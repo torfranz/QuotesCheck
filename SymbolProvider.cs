@@ -68,7 +68,7 @@
                 var symbol = this.LoadSymbolData(dataPath);
 
                 // are time series still current, no => update
-                if (symbol.TimeSeries == null || symbol.TimeSeries[0].Day.DayOfYear < DateTime.Now.DayOfYear
+                if (symbol.TimeSeries.Count == 0 || symbol.TimeSeries[0].Day.DayOfYear < DateTime.Now.DayOfYear
                                               || symbol.TimeSeries[0].Day.Year < DateTime.Now.Year)
                 {
                     symbol.UpdateTimeSeries();

@@ -13,21 +13,22 @@
 
             var symbolProvider = new SymbolProvider();
             var symbol = symbolProvider.LookUpISIN("DE000A0D9PT0");
-            var ema20 = Indicators.Ema(symbol.TimeSeries.Select(item => item.Close).ToArray(), 20);
-            var dema20 = Indicators.Dema(symbol.TimeSeries.Select(item => item.Close).ToArray(), 20);
-            var sma20 = Indicators.Sma(symbol.TimeSeries.Select(item => item.Close).ToArray(), 20);
-            var tema20 = Indicators.Tema(symbol.TimeSeries.Select(item => item.Close).ToArray(), 20);
-            var kama20 = Indicators.KAMA(symbol.TimeSeries.Select(item => item.Close).ToArray(), 20);
-            var tma20 = Indicators.Tma(symbol.TimeSeries.Select(item => item.Close).ToArray(), 20);
-            var vwma20 = Indicators.Vwma(symbol.TimeSeries.Select(item => item.Close).ToArray(), symbol.TimeSeries.Select(item => item.Volume).ToArray(), 20);
-            var wma20 = Indicators.Wma(symbol.TimeSeries.Select(item => item.Close).ToArray(), 20);
-            var rsl20 = Indicators.Rsl(symbol.TimeSeries.Select(item => item.Close).ToArray(), 20);
-            var obv20 = Indicators.Obv(symbol.TimeSeries.Select(item => item.Close).ToArray(), symbol.TimeSeries.Select(item => item.Volume).ToArray());
-            var (macd, signal) = Indicators.Macd(symbol.TimeSeries.Select(item => item.Close).ToArray(), 12, 26, 9);
-            var st = Indicators.ST(symbol.TimeSeries, 50, 3);
-            var (upper, lower, middle) = Indicators.BB(symbol.TimeSeries.Select(item => item.Close).ToArray(), 20, 2);
-            var tp = Indicators.TP(symbol.TimeSeries);
-            var cci = Indicators.CCI(symbol.TimeSeries, 20);
+            var ema20 = Indicators.Ema(symbol.Close, 20);
+            var dema20 = Indicators.Dema(symbol.Close, 20);
+            var sma20 = Indicators.Sma(symbol.Close, 20);
+            var tema20 = Indicators.Tema(symbol.Close, 20);
+            var kama20 = Indicators.KAMA(symbol.Close, 20);
+            var tma20 = Indicators.Tma(symbol.Close, 20);
+            var vwma20 = Indicators.Vwma(symbol.Close, symbol.Volume, 20);
+            var wma20 = Indicators.Wma(symbol.Close, 20);
+            var rsl20 = Indicators.Rsl(symbol.Close, 20);
+            var obv20 = Indicators.Obv(symbol.Close, symbol.Volume);
+            var (macd, signal) = Indicators.Macd(symbol.Close, 12, 26, 9);
+            var st = Indicators.ST(symbol, 50, 3);
+            var (upper, lower, middle) = Indicators.BB(symbol.Close.ToArray(), 20, 2);
+            var tp = Indicators.TP(symbol);
+            var cci = Indicators.CCI(symbol, 20);
+            var stdev = Indicators.STDEV(symbol.Close, 20);
         }
     }
 }

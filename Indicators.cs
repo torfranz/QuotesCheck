@@ -1,9 +1,7 @@
 ﻿namespace QuotesCheck
 {
     using System;
-    using System.Collections.Generic;
     using System.Diagnostics;
-    using System.Linq;
 
     internal static class Indicators
     {
@@ -164,7 +162,7 @@
             return tema;
         }
 
-        public static double[] ST(IList<TimeSeries> series, int period, double factor)
+        public static double[] ST(SymbolInformation symbol, int period, double factor)
         {
             // p = integer("Period", 10)
             // f = integer("Factor", 3)
@@ -180,9 +178,9 @@
 
             // st = skip(trend == 1 ? trendUp : trendDown, p)
 
-            var high = series.Select(item => item.High).ToArray();
-            var low = series.Select(item => item.Low).ToArray();
-            var close = series.Select(item => item.Close).ToArray();
+            var high = symbol.High;
+            var low = symbol.Low;
+            var close = symbol.Close;
 
             var max = Create(close.Length);
             for (var index = close.Length - 1; index >= 0; index--)
@@ -208,17 +206,16 @@
                 st[index] = trend[index] == 1 ? trendUp[index] : trendDown[index];
             }
 
-            Debug.Assert(st.Length == series.Count);
             return st;
         }
 
-        public static double[] TP(IList<TimeSeries> series)
+        public static double[] TP(SymbolInformation symbol)
         {
             // tp = (close + high + low) / 3
 
-            var high = series.Select(item => item.High).ToArray();
-            var low = series.Select(item => item.Low).ToArray();
-            var close = series.Select(item => item.Close).ToArray();
+            var high = symbol.High;
+            var low = symbol.Low;
+            var close = symbol.Close;
 
             var tp = Create(close.Length);
             for (var index = close.Length - 1; index >= 0; index--)
@@ -226,11 +223,10 @@
                 tp[index] = (close[index] + low[index] + high[index]) / 3;
             }
 
-            Debug.Assert(tp.Length == series.Count);
             return tp;
         }
 
-        public static double[] CCI(IList<TimeSeries> series, int period)
+        public static double[] CCI(SymbolInformation symbol, int period)
         {
             // n = integer("Period", 20)
 
@@ -240,9 +236,9 @@
             // sAvg = loop((i, res) { res + abs(tp[i] - avg) }, n) / n
             // cci = (sAvg == 0 ? 0 : ((tp - avg) / (0.015 * sAvg)))
 
-            var close = series.Select(item => item.Close).ToArray();
+            var close = symbol.Close;
 
-            var tp = TP(series);
+            var tp = TP(symbol);
             var cci = Create(close.Length);
             for (var index = close.Length - 1; index >= 0; index--)
             {
@@ -257,10 +253,9 @@
                 cci[index] = sAvg == 0 ? 0 : (tp[index] - avg) / (0.015 * sAvg);
             }
 
-            Debug.Assert(cci.Length == series.Count);
             return cci;
         }
-        
+
         public static double[] Tma(double[] data, int period)
         {
             // a = n%2 == 0? n/2 : (n+1)/2
@@ -281,6 +276,20 @@
 
             Debug.Assert(tma.Length == data.Length);
             return tma;
+        }
+
+        public static double[] STDEV(double[] data, int period)
+        {
+            // stdev(close, n)
+            var stdev = Create(data.Length);
+
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                stdev[index] = Stdev(data, index, period);
+            }
+
+            Debug.Assert(stdev.Length == data.Length);
+            return stdev;
         }
 
         public static (double[] Upper, double[] Lower, double[] Middle) BB(double[] data, int period, double factor)

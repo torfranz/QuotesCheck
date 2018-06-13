@@ -18,7 +18,7 @@
 
         public override string ToString()
         {
-            return $"{this.Day:d} - O: {this.Open:F} C: {this.Close:F} H: {this.High:F} L: {this.Low:F}";
+            return $"{this.Day:d} - O: {this.Open:F} C: {this.Close:F} H: {this.High:F} L: {this.Low:F} V: {this.Volume}";
         }
     }
 }

@@ -7,7 +7,12 @@
     {
         private static double At(this double[] data, int index)
         {
-            return index >=0 && index < data.Length ? data[index]: double.NaN;
+            return index >= 0 && index < data.Length ? data[index] : double.NaN;
+        }
+
+        private static double At(this int[] data, int index)
+        {
+            return index >= 0 && index < data.Length ? data[index] : double.NaN;
         }
 
         private static double nn(double value, double defaultValue = 0)
@@ -19,10 +24,7 @@
         {
             var values = new double[length];
 
-            for (var index = length - 1; index >= 0; index--)
-            {
-                values[index] = value;
-            }
+            for (var index = length - 1; index >= 0; index--) values[index] = value;
             return values;
         }
 
@@ -36,9 +38,7 @@
             var ema = Create(data.Length);
 
             for (var index = data.Length - 1; index >= 0; index--)
-            {
                 ema[index] = nn(ema.At(index + 1), data[index]) + wf * nn(data[index] - ema.At(index + 1));
-            }
 
             Debug.Assert(ema.Length == data.Length);
             return ema;
@@ -50,9 +50,7 @@
             var sma = Create(data.Length);
 
             for (var index = data.Length - 1; index >= 0; index--)
-            {
                 sma[index] = nn(sma.At(index + 1)) + data[index] / period - nn(data.At(index + period) / period);
-            }
 
             Debug.Assert(sma.Length == data.Length);
             return sma;
@@ -67,13 +65,33 @@
 
             var dema = Create(data.Length);
 
-            for (var index = data.Length - 1; index >= 0; index--)
-            {
-                dema[index] = 2*ema1[index] - ema2[index];
-            }
+            for (var index = data.Length - 1; index >= 0; index--) dema[index] = 2 * ema1[index] - ema2[index];
 
             Debug.Assert(dema.Length == data.Length);
             return dema;
+        }
+
+        public static double[] Vwma(double[] data, int[] volume, int period)
+        {
+            // vwma = loop((i, res){ res+close[i]*volume[i] }, n) / sum(volume, n)
+
+            var vwma = Create(data.Length);
+
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                var divisor = Sum(volume, index, period);
+
+                var res = 0.0;
+                for (var loopIndex = index; loopIndex < index + period; loopIndex++)
+                {
+                    res += data.At(loopIndex) * volume.At(loopIndex);
+                }
+
+                vwma[index] = res / divisor;
+            }
+
+            Debug.Assert(vwma.Length == data.Length);
+            return vwma;
         }
 
         public static double[] Tema(double[] data, int period)
@@ -89,10 +107,7 @@
 
             var tema = Create(data.Length);
 
-            for (var index = data.Length - 1; index >= 0; index--)
-            {
-                tema[index] = 3 * ema1[index] - 3 * ema2[index] + ema3[index];
-            }
+            for (var index = data.Length - 1; index >= 0; index--) tema[index] = 3 * ema1[index] - 3 * ema2[index] + ema3[index];
 
             Debug.Assert(tema.Length == data.Length);
             return tema;
@@ -111,10 +126,7 @@
 
             var tma = Create(data.Length);
 
-            for (var index = data.Length - 1; index >= 0; index--)
-            {
-                tma[index] = sma[index];
-            }
+            for (var index = data.Length - 1; index >= 0; index--) tma[index] = sma[index];
 
             Debug.Assert(tma.Length == data.Length);
             return tma;
@@ -123,10 +135,14 @@
         private static double Sum(double[] data, int startIndex, int length)
         {
             var result = 0.0;
-            for (int index = startIndex; index < startIndex + length; index++)
-            {
-                result += data.At(index);
-            }
+            for (var index = startIndex; index < startIndex + length; index++) result += data.At(index);
+            return result;
+        }
+
+        private static double Sum(int[] data, int startIndex, int length)
+        {
+            var result = 0.0;
+            for (var index = startIndex; index < startIndex + length; index++) result += data.At(index);
             return result;
         }
 
@@ -161,11 +177,11 @@
                 xvNoise[index] = Math.Abs(xPrice[index] - xPrice.At(index + 1));
                 nSignal[index] = Math.Abs(xPrice[index] - xPrice.At(index + length));
                 var nNoise = Sum(xvNoise, index, length);
-                
+
                 var nefRatio = nNoise != 0 ? nSignal[index] / nNoise : 0;
                 var nSmooth = Math.Pow(nefRatio * (nFastend - nSlowend) + nSlowend, 2);
-                
-                kama[index] = nn(kama.At(index + 1)) + nSmooth * (xPrice[index] - nn(kama.At(index + 1)));                
+
+                kama[index] = nn(kama.At(index + 1)) + nSmooth * (xPrice[index] - nn(kama.At(index + 1)));
             }
 
             Debug.Assert(kama.Length == data.Length);

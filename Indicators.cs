@@ -212,6 +212,55 @@
             return st;
         }
 
+        public static double[] TP(IList<TimeSeries> series)
+        {
+            // tp = (close + high + low) / 3
+
+            var high = series.Select(item => item.High).ToArray();
+            var low = series.Select(item => item.Low).ToArray();
+            var close = series.Select(item => item.Close).ToArray();
+
+            var tp = Create(close.Length);
+            for (var index = close.Length - 1; index >= 0; index--)
+            {
+                tp[index] = (close[index] + low[index] + high[index]) / 3;
+            }
+
+            Debug.Assert(tp.Length == series.Count);
+            return tp;
+        }
+
+        public static double[] CCI(IList<TimeSeries> series, int period)
+        {
+            // n = integer("Period", 20)
+
+            // # calculation
+            // tp = (high + low + close) / 3
+            // avg = sum(tp, n) / n
+            // sAvg = loop((i, res) { res + abs(tp[i] - avg) }, n) / n
+            // cci = (sAvg == 0 ? 0 : ((tp - avg) / (0.015 * sAvg)))
+
+            var close = series.Select(item => item.Close).ToArray();
+
+            var tp = TP(series);
+            var cci = Create(close.Length);
+            for (var index = close.Length - 1; index >= 0; index--)
+            {
+                var avg = Sum(tp, index, period) / period;
+                var res = 0.0;
+                for (var i = 0; i < period; i++)
+                {
+                    res += Math.Abs(tp.At(index + i) - avg);
+                }
+
+                var sAvg = res / period;
+                cci[index] = sAvg == 0 ? 0 : (tp[index] - avg) / (0.015 * sAvg);
+            }
+
+            Debug.Assert(cci.Length == series.Count);
+            return cci;
+        }
+        
         public static double[] Tma(double[] data, int period)
         {
             // a = n%2 == 0? n/2 : (n+1)/2

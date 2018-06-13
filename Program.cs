@@ -26,6 +26,8 @@
             var (macd, signal) = Indicators.Macd(symbol.TimeSeries.Select(item => item.Close).ToArray(), 12, 26, 9);
             var st = Indicators.ST(symbol.TimeSeries, 50, 3);
             var (upper, lower, middle) = Indicators.BB(symbol.TimeSeries.Select(item => item.Close).ToArray(), 20, 2);
+            var tp = Indicators.TP(symbol.TimeSeries);
+            var cci = Indicators.CCI(symbol.TimeSeries, 20);
         }
     }
 }

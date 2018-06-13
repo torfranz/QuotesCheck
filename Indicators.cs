@@ -109,6 +109,29 @@
             return tp;
         }
 
+        public static (double[] Bullish, double[] Bearish) ELR(SymbolInformation symbol, int length)
+        {
+            // x = ema(close, length)
+            // bullish = high-x
+            // bearish = low-x
+
+            var high = symbol.High;
+            var low = symbol.Low;
+            var close = symbol.Close;
+
+            var x = EMA(close, length);
+            var bullish = Create(close.Length);
+            var bearish = Create(close.Length);
+
+            for (var index = close.Length - 1; index >= 0; index--)
+            {
+                bullish[index] = high[index] - x[index];
+                bearish[index] = low[index] - x[index];
+            }
+
+            return (bullish, bearish);
+        }
+
         public static double[] CCI(SymbolInformation symbol, int period)
         {
             // n = integer("Period", 20)

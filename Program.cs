@@ -12,6 +12,7 @@
 
             var symbolProvider = new SymbolProvider();
             var symbol = symbolProvider.LookUpISIN("DE000A0D9PT0");
+
             var ema20 = Indicators.EMA(symbol, SourceType.Close, 20);
             var dema20 = Indicators.DEMA(symbol, SourceType.Close, 20);
             var sma20 = Indicators.SMA(symbol, SourceType.Close, 20);
@@ -28,6 +29,7 @@
             var tp = Indicators.TP(symbol);
             var cci = Indicators.CCI(symbol, 20);
             var stdev = Indicators.STDEV(symbol, SourceType.Close, 20);
+            var (bullish, bearish) = Indicators.ELR(symbol, 20);
         }
     }
 }

@@ -151,6 +151,43 @@
             return (bullish, bearish);
         }
 
+        public static (double[] DMI, double[] DIPlus, double[] DIMinus) DMI(SymbolInformation symbol, int period)
+        {
+            // n = integer("Period", 14)
+
+            // # calculation
+            // tr = sum(max(high - low, high - close[1], low - close[1]), n)
+            // diPlus = sum(max(high - high[1], 0), n) / tr
+            // diMinus = sum(max(high <= high[1] ? low[1] - low : 0, 0), n) / tr
+            // dmi = abs((diPlus - diMinus) / (diPlus + diMinus)) * 100
+
+            var high = symbol.High;
+            var low = symbol.Low;
+            var close = symbol.Close;
+            var tr = TR(symbol, period);
+
+            var dmi = Create(close.Length);
+            var diPlus = Create(close.Length);
+            var diMinus = Create(close.Length);
+
+            for (var index = close.Length - 1; index >= 0; index--)
+            {
+                var diP = 0.0;
+                var diM = 0.0;
+                for (var i = 0; i < period; i++)
+                {
+                    diP += Math.Max(high.At(index + i) - high.At(index + i + 1), 0);
+                    diM += Math.Max(high.At(index + i) <= high.At(index + i + 1) ? low.At(index + i + 1) - low.At(index + i) : 0, 0);
+                }
+
+                diPlus[index] = diP / tr[index] * 100;
+                diMinus[index] = diM / tr[index] * 100;
+                dmi[index] = Math.Abs((diPlus[index] - diMinus[index]) / (diPlus[index] + diMinus[index])) * 100;
+            }
+
+            return (dmi, diPlus, diMinus);
+        }
+
         public static double[] CCI(SymbolInformation symbol, int period)
         {
             // n = integer("Period", 20)
@@ -179,6 +216,28 @@
             }
 
             return cci;
+        }
+
+        private static double[] TR(SymbolInformation symbol, int period)
+        {
+            // tr  = sum(max(high - low, high - close[1], low - close[1]), n)
+            var close = symbol.Close;
+            var high = symbol.High;
+            var low = symbol.Low;
+
+            var max = Create(close.Length);
+            for (var index = close.Length - 1; index >= 0; index--)
+            {
+                max[index] = Math.Max(Math.Max(high[index] - low[index], high[index] - close.At(index + 1)), low[index] - close.At(index + 1));
+            }
+
+            var tr = Create(close.Length);
+            for (var index = close.Length - 1; index >= 0; index--)
+            {
+                tr[index] = Sum(max, index, period);
+            }
+
+            return tr;
         }
 
         public static double[] ATR(SymbolInformation symbol, int period)

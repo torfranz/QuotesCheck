@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.ComponentModel;
     using System.Diagnostics;
     using System.Linq;
 
@@ -54,6 +55,23 @@
 
         [JsonProperty]
         private string reuters_exchange_code { get; set; }
+
+        public double[] Data(SourceType sourceType)
+        {
+            switch (sourceType)
+            {
+                case SourceType.Close:
+                    return this.Close;
+                case SourceType.Open:
+                    return this.Open;
+                case SourceType.High:
+                    return this.High;
+                case SourceType.Low:
+                    return this.Low;
+                default:
+                    throw new InvalidEnumArgumentException();
+            }
+        }
 
         public void UpdateTimeSeries()
         {

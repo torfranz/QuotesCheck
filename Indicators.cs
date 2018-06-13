@@ -5,161 +5,44 @@
 
     internal static class Indicators
     {
-        public static double[] Ema(double[] data, int period)
+        public static double[] EMA(SymbolInformation symbol, SourceType sourceType, int period)
         {
-            // wf = 2 / (n + 1)
-            // ema = nn(ema[1], close) + wf * nn(close - ema[1], 0)
-
-            var wf = 2.0 / (period + 1);
-
-            var ema = Create(data.Length);
-
-            for (var index = data.Length - 1; index >= 0; index--)
-            {
-                ema[index] = nn(ema.At(index + 1), data[index]) + wf * nn(data[index] - ema.At(index + 1));
-            }
-
-            Debug.Assert(ema.Length == data.Length);
-            return ema;
+            return EMA(symbol.Data(sourceType), period);
         }
 
-        public static double[] Sma(double[] data, int period)
+        public static double[] SMA(SymbolInformation symbol, SourceType sourceType, int period)
         {
-            // sma = nn(sma[1], 0) + (close / n) - nn(close[n] / n, 0)
-            var sma = Create(data.Length);
-
-            for (var index = data.Length - 1; index >= 0; index--)
-            {
-                sma[index] = nn(sma.At(index + 1)) + data[index] / period - nn(data.At(index + period) / period);
-            }
-
-            Debug.Assert(sma.Length == data.Length);
-            return sma;
+            return SMA(symbol.Data(sourceType), period);
         }
 
-        public static double[] Dema(double[] data, int period)
+        public static double[] DEMA(SymbolInformation symbol, SourceType sourceType, int period)
         {
-            // dema = 2*ema(close, n) - ema(ema(close, n), n)
-
-            var ema1 = Ema(data, period);
-            var ema2 = Ema(ema1, period);
-
-            var dema = Create(data.Length);
-
-            for (var index = data.Length - 1; index >= 0; index--)
-            {
-                dema[index] = 2 * ema1[index] - ema2[index];
-            }
-
-            Debug.Assert(dema.Length == data.Length);
-            return dema;
+            return DEMA(symbol.Data(sourceType), period);
         }
 
-        public static double[] Vwma(double[] data, int[] volume, int period)
+        public static double[] VWMA(SymbolInformation symbol, SourceType sourceType, int period)
         {
-            // vwma = loop((i, res){ res+close[i]*volume[i] }, n) / sum(volume, n)
-
-            var vwma = Create(data.Length);
-
-            for (var index = data.Length - 1; index >= 0; index--)
-            {
-                var divisor = Sum(volume, index, period);
-
-                var res = 0.0;
-                for (var i = 0; i < period; i++)
-                {
-                    res += data.At(index + i) * volume.At(index + i);
-                }
-
-                vwma[index] = res / divisor;
-            }
-
-            Debug.Assert(vwma.Length == data.Length);
-            return vwma;
+            return VWMA(symbol.Data(sourceType), symbol.Volume, period);
         }
 
-        public static double[] Obv(double[] data, int[] volume)
+        public static double[] OBV(SymbolInformation symbol, SourceType sourceType)
         {
-            // obv = nn(close < close[1] ? obv[1]-volume : (close > close[1] ? obv[1]+volume : obv[1]), 0)
-
-            var obv = Create(data.Length);
-
-            for (var index = data.Length - 1; index >= 0; index--)
-            {
-                obv[index] = nn(
-                    data[index] < data.At(index + 1)
-                        ? obv.At(index + 1) - volume[index]
-                        : (data[index] > data.At(index + 1) ? obv.At(index + 1) + volume[index] : obv.At(index + 1)));
-            }
-
-            Debug.Assert(obv.Length == data.Length);
-            return obv;
+            return OBV(symbol.Data(sourceType), symbol.Volume);
         }
 
-        public static double[] Wma(double[] data, int n)
+        public static double[] WMA(SymbolInformation symbol, SourceType sourceType, int period)
         {
-            // wma = loop((i, res){ res+close[i]*(n-i) }, n) / ((pow(n, 2)-n)/2+n)
-
-            var wma = Create(data.Length);
-
-            var divisor = (Math.Pow(n, 2) - n) / 2 + n;
-
-            for (var index = data.Length - 1; index >= 0; index--)
-            {
-                var res = 0.0;
-                for (var i = 0; i < n; i++)
-                {
-                    res += data.At(index + i) * (n - i);
-                }
-
-                wma[index] = res / divisor;
-            }
-
-            Debug.Assert(wma.Length == data.Length);
-            return wma;
+            return WMA(symbol.Data(sourceType), period);
         }
 
-        public static (double[] MACD, double[] Signal) Macd(double[] data, int fastPeriod, int slowPeriod, int signalPeriod)
+        public static (double[] MACD, double[] Signal) MACD(SymbolInformation symbol, SourceType sourceType, int fastPeriod, int slowPeriod, int signalPeriod)
         {
-            // macd = ema(close, p1) - ema(close, p2)
-            // signal = ema(macd, pS)
-
-            var macd = Create(data.Length);
-
-            var emaFast = Ema(data, fastPeriod);
-            var emaSlow = Ema(data, slowPeriod);
-
-            // macd
-            for (var index = data.Length - 1; index >= 0; index--)
-            {
-                macd[index] = emaFast[index] - emaSlow[index];
-                macd[index] = emaFast[index] - emaSlow[index];
-            }
-
-            Debug.Assert(macd.Length == data.Length);
-            return (macd, Ema(macd, signalPeriod));
+            return MACD(symbol.Data(sourceType), fastPeriod, slowPeriod, signalPeriod);
         }
 
-        public static double[] Tema(double[] data, int period)
+        public static double[] TEMA(SymbolInformation symbol, SourceType sourceType, int period)
         {
-            // ema1 = ema(close, n)
-            // ema2 = ema(ema1, n)
-            // ema3 = ema(ema2, n)
-            // tema = 3 * ema1 - 3 * ema2 + ema3
-
-            var ema1 = Ema(data, period);
-            var ema2 = Ema(ema1, period);
-            var ema3 = Ema(ema2, period);
-
-            var tema = Create(data.Length);
-
-            for (var index = data.Length - 1; index >= 0; index--)
-            {
-                tema[index] = 3 * ema1[index] - 3 * ema2[index] + ema3[index];
-            }
-
-            Debug.Assert(tema.Length == data.Length);
-            return tema;
+            return TEMA(symbol.Data(sourceType), period);
         }
 
         public static double[] ST(SymbolInformation symbol, int period, double factor)
@@ -256,7 +139,189 @@
             return cci;
         }
 
-        public static double[] Tma(double[] data, int period)
+        public static double[] TMA(SymbolInformation symbol, SourceType sourceType, int period)
+        {
+            return TMA(symbol.Data(sourceType), period);
+        }
+
+        public static double[] STDEV(SymbolInformation symbol, SourceType sourceType, int period)
+        {
+            return STDEV(symbol.Data(sourceType), period);
+        }
+
+        public static (double[] Upper, double[] Lower, double[] Middle) BB(SymbolInformation symbol, SourceType sourceType, int period, double factor)
+        {
+            return BB(symbol.Data(sourceType), period, factor);
+        }
+
+        public static double[] RSL(SymbolInformation symbol, SourceType sourceType, int period)
+        {
+            return RSL(symbol.Data(sourceType), period);
+        }
+
+        public static double[] KAMA(SymbolInformation symbol, SourceType sourceType, int length)
+        {
+            return KAMA(symbol.Data(sourceType), length);
+        }
+
+        private static double[] EMA(double[] data, int period)
+        {
+            // wf = 2 / (n + 1)
+            // ema = nn(ema[1], close) + wf * nn(close - ema[1], 0)
+
+            var wf = 2.0 / (period + 1);
+
+            var ema = Create(data.Length);
+
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                ema[index] = nn(ema.At(index + 1), data[index]) + wf * nn(data[index] - ema.At(index + 1));
+            }
+
+            Debug.Assert(ema.Length == data.Length);
+            return ema;
+        }
+
+        private static double[] SMA(double[] data, int period)
+        {
+            // sma = nn(sma[1], 0) + (close / n) - nn(close[n] / n, 0)
+            var sma = Create(data.Length);
+
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                sma[index] = nn(sma.At(index + 1)) + data[index] / period - nn(data.At(index + period) / period);
+            }
+
+            Debug.Assert(sma.Length == data.Length);
+            return sma;
+        }
+
+        private static double[] DEMA(double[] data, int period)
+        {
+            // dema = 2*ema(close, n) - ema(ema(close, n), n)
+
+            var ema1 = EMA(data, period);
+            var ema2 = EMA(ema1, period);
+
+            var dema = Create(data.Length);
+
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                dema[index] = 2 * ema1[index] - ema2[index];
+            }
+
+            Debug.Assert(dema.Length == data.Length);
+            return dema;
+        }
+
+        private static double[] VWMA(double[] data, int[] volume, int period)
+        {
+            // vwma = loop((i, res){ res+close[i]*volume[i] }, n) / sum(volume, n)
+
+            var vwma = Create(data.Length);
+
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                var divisor = Sum(volume, index, period);
+
+                var res = 0.0;
+                for (var i = 0; i < period; i++)
+                {
+                    res += data.At(index + i) * volume.At(index + i);
+                }
+
+                vwma[index] = res / divisor;
+            }
+
+            Debug.Assert(vwma.Length == data.Length);
+            return vwma;
+        }
+
+        private static double[] OBV(double[] data, int[] volume)
+        {
+            // obv = nn(close < close[1] ? obv[1]-volume : (close > close[1] ? obv[1]+volume : obv[1]), 0)
+
+            var obv = Create(data.Length);
+
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                obv[index] = nn(
+                    data[index] < data.At(index + 1)
+                        ? obv.At(index + 1) - volume[index]
+                        : (data[index] > data.At(index + 1) ? obv.At(index + 1) + volume[index] : obv.At(index + 1)));
+            }
+
+            Debug.Assert(obv.Length == data.Length);
+            return obv;
+        }
+
+        private static double[] WMA(double[] data, int period)
+        {
+            // wma = loop((i, res){ res+close[i]*(n-i) }, n) / ((pow(n, 2)-n)/2+n)
+
+            var wma = Create(data.Length);
+
+            var divisor = (Math.Pow(period, 2) - period) / 2 + period;
+
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                var res = 0.0;
+                for (var i = 0; i < period; i++)
+                {
+                    res += data.At(index + i) * (period - i);
+                }
+
+                wma[index] = res / divisor;
+            }
+
+            Debug.Assert(wma.Length == data.Length);
+            return wma;
+        }
+
+        private static (double[] MACD, double[] Signal) MACD(double[] data, int fastPeriod, int slowPeriod, int signalPeriod)
+        {
+            // macd = ema(close, p1) - ema(close, p2)
+            // signal = ema(macd, pS)
+
+            var macd = Create(data.Length);
+
+            var emaFast = EMA(data, fastPeriod);
+            var emaSlow = EMA(data, slowPeriod);
+
+            // macd
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                macd[index] = emaFast[index] - emaSlow[index];
+                macd[index] = emaFast[index] - emaSlow[index];
+            }
+
+            Debug.Assert(macd.Length == data.Length);
+            return (macd, EMA(macd, signalPeriod));
+        }
+
+        private static double[] TEMA(double[] data, int period)
+        {
+            // ema1 = ema(close, n)
+            // ema2 = ema(ema1, n)
+            // ema3 = ema(ema2, n)
+            // tema = 3 * ema1 - 3 * ema2 + ema3
+
+            var ema1 = EMA(data, period);
+            var ema2 = EMA(ema1, period);
+            var ema3 = EMA(ema2, period);
+
+            var tema = Create(data.Length);
+
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                tema[index] = 3 * ema1[index] - 3 * ema2[index] + ema3[index];
+            }
+
+            Debug.Assert(tema.Length == data.Length);
+            return tema;
+        }
+
+        private static double[] TMA(double[] data, int period)
         {
             // a = n%2 == 0? n/2 : (n+1)/2
             // b = n % 2 == 0 ? a + 1 : a
@@ -265,7 +330,7 @@
             var a = period % 2 == 0 ? period / 2 : (period + 1) / 2;
             var b = period % 2 == 0 ? a + 1 : a;
 
-            var sma = Sma(Sma(data, a), b);
+            var sma = SMA(SMA(data, a), b);
 
             var tma = Create(data.Length);
 
@@ -278,7 +343,7 @@
             return tma;
         }
 
-        public static double[] STDEV(double[] data, int period)
+        private static double[] STDEV(double[] data, int period)
         {
             // stdev(close, n)
             var stdev = Create(data.Length);
@@ -292,7 +357,7 @@
             return stdev;
         }
 
-        public static (double[] Upper, double[] Lower, double[] Middle) BB(double[] data, int period, double factor)
+        private static (double[] Upper, double[] Lower, double[] Middle) BB(double[] data, int period, double factor)
         {
             // # input
             // n = integer("Period", 20)
@@ -303,7 +368,7 @@
             // upper = middle + f * stdev(close, n)
             // lower = middle - f * stdev(close, n)
 
-            var middle = Sma(data, period);
+            var middle = SMA(data, period);
             var upper = Create(data.Length);
             var lower = Create(data.Length);
 
@@ -317,11 +382,11 @@
             return (upper, lower, middle);
         }
 
-        public static double[] Rsl(double[] data, int period)
+        private static double[] RSL(double[] data, int period)
         {
             // rsl = close / sma(close, n)
 
-            var sma = Sma(data, period);
+            var sma = SMA(data, period);
 
             var rsl = Create(data.Length);
 
@@ -334,7 +399,7 @@
             return rsl;
         }
 
-        public static double[] KAMA(double[] data, int length)
+        private static double[] KAMA(double[] data, int length)
         {
             // # input
             // length = integer("length", 21)

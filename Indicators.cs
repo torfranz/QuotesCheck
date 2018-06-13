@@ -56,6 +56,16 @@
             return TEMA(symbol.Data(sourceType), period);
         }
 
+        public static double[] HH(SymbolInformation symbol, int period)
+        {
+            return HH(symbol.High, period);
+        }
+
+        public static double[] LL(SymbolInformation symbol, int period)
+        {
+            return LL(symbol.Low, period);
+        }
+
         public static double[] ST(SymbolInformation symbol, int period, double factor)
         {
             // p = integer("Period", 10)
@@ -413,6 +423,44 @@
 
             Debug.Assert(tema.Length == data.Length);
             return tema;
+        }
+
+        private static double[] HH(double[] data, int period)
+        {
+            var hh = Create(data.Length);
+
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                var highest = data[index];
+                for (var i = 0; i < period; i++)
+                {
+                    highest = Math.Max(data.At(index + i), highest);
+                }
+
+                hh[index] = highest;
+            }
+
+            Debug.Assert(hh.Length == data.Length);
+            return hh;
+        }
+
+        private static double[] LL(double[] data, int period)
+        {
+            var ll = Create(data.Length);
+
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                var lowest = data[index];
+                for (var i = 0; i < period; i++)
+                {
+                    lowest = Math.Min(data.At(index + i), lowest);
+                }
+
+                ll[index] = lowest;
+            }
+
+            Debug.Assert(ll.Length == data.Length);
+            return ll;
         }
 
         private static double[] TMA(double[] data, int period)

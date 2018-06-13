@@ -151,6 +151,22 @@
             return (bullish, bearish);
         }
 
+        public static double[] ADX(SymbolInformation symbol, int period)
+        {
+            // n = integer("Period", 14)
+
+            // # calculation
+            // tr = sum(max(high - low, high - close[1], low - close[1]), n)
+            // diPlus = sum(max(high - high[1], 0), n) / tr
+            // diMinus = sum(max(high <= high[1] ? low[1] - low : 0, 0), n) / tr
+            // dmi = abs((diPlus - diMinus) / (diPlus + diMinus)) * 100
+            // adx = sma(dmi, n)
+
+            var (dmi, _, _) = DMI(symbol, period);
+            
+            return SMA(dmi, period);
+        }
+
         public static (double[] DMI, double[] DIPlus, double[] DIMinus) DMI(SymbolInformation symbol, int period)
         {
             // n = integer("Period", 14)

@@ -36,7 +36,7 @@
             var ll = Indicators.LL(symbol, 20);
             var vola = Indicators.VOLA(symbol, SourceType.Close, 30, 250);
             var (dmi, diPlus, diMinus) = Indicators.DMI(symbol, 20);
-
+            var adx = Indicators.ADX(symbol, 20);
 
             var md = Indicators.MD(symbol, SourceType.Close, 20); // --> not correct
         }

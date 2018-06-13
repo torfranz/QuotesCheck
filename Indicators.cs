@@ -35,6 +35,11 @@
             return OBV(symbol.Data(sourceType), symbol.Volume);
         }
 
+        public static double[] MD(SymbolInformation symbol, SourceType sourceType, int period)
+        {
+            return MD(symbol.Data(sourceType), period);
+        }
+
         public static double[] WMA(SymbolInformation symbol, SourceType sourceType, int period)
         {
             return WMA(symbol.Data(sourceType), period);
@@ -167,6 +172,28 @@
             return cci;
         }
 
+        public static double[] ATR(SymbolInformation symbol, int period)
+        {
+            // atr = sum(max(high - low, high - close[1], close[1] - low), n) / n
+            var close = symbol.Close;
+            var high = symbol.High;
+            var low = symbol.Low;
+
+            var max = Create(close.Length);
+            for (var index = close.Length - 1; index >= 0; index--)
+            {
+                max[index] = Math.Max(Math.Max(high[index] - low[index], high[index] - close.At(index + 1)), close.At(index + 1) - low[index]);
+            }
+
+            var atr = Create(close.Length);
+            for (var index = close.Length - 1; index >= 0; index--)
+            {
+                atr[index] = Sum(max, index, period) / period;
+            }
+
+            return atr;
+        }
+
         public static double[] TMA(SymbolInformation symbol, SourceType sourceType, int period)
         {
             return TMA(symbol.Data(sourceType), period);
@@ -240,6 +267,36 @@
 
             Debug.Assert(dema.Length == data.Length);
             return dema;
+        }
+
+        private static double Median(double[] data, int startIndex, int length)
+        {
+            var workingData = new double[length];
+
+            for (var i = 0; i < length; i++)
+            {
+                workingData[i] = data.At(startIndex + i);
+            }
+            
+            Array.Sort(workingData);
+            return workingData.Length % 2 == 0
+                       ? (workingData[workingData.Length / 2 - 1] + workingData[workingData.Length / 2]) / 2
+                       : workingData[workingData.Length / 2];
+        }
+
+        private static double[] MD(double[] data, int period)
+        {
+            // md = md(close, n)
+
+            var median = Create(data.Length);
+
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                median[index] = Math.Abs(data[index] - Median(data, index, period));
+            }
+
+            Debug.Assert(median.Length == data.Length);
+            return median;
         }
 
         private static double[] VWMA(double[] data, int[] volume, int period)

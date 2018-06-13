@@ -25,6 +25,8 @@
 
         private int[] volume;
 
+        private DateTime[] date;
+
         [JsonProperty]
         public IList<TimeSeries> TimeSeries { get; private set; } = new List<TimeSeries>();
 
@@ -43,6 +45,8 @@
         public double[] Low => this.low ?? (this.low = this.TimeSeries.Select(item => item.Low).ToArray());
 
         public int[] Volume => this.volume ?? (this.volume = this.TimeSeries.Select(item => item.Volume).ToArray());
+
+        public DateTime[] Day => this.date ?? (this.date = this.TimeSeries.Select(item => item.Day).ToArray());
 
         [JsonProperty]
         private string company_name { get; set; }

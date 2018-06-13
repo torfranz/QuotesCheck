@@ -31,6 +31,10 @@
             var stdev = Indicators.STDEV(symbol, SourceType.Close, 20);
             var (bullish, bearish) = Indicators.ELR(symbol, 20);
             var vpt = Indicators.VPT(symbol, SourceType.Close);
+            var atr = Indicators.ATR(symbol, 20);
+
+
+            var md = Indicators.MD(symbol, SourceType.Close, 20); // --> not correct
         }
     }
 }

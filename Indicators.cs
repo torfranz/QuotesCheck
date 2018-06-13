@@ -119,6 +119,28 @@
             return wma;
         }
 
+        public static (double[] MACD, double[] Signal) Macd(double[] data, int fastPeriod, int slowPeriod, int signalPeriod)
+        {
+            // macd = ema(close, p1) - ema(close, p2)
+            // signal = ema(macd, pS)
+
+            var macd = Create(data.Length);
+            
+            var emaFast = Ema(data, fastPeriod);
+            var emaSlow = Ema(data, slowPeriod);
+
+            // macd
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                macd[index] = emaFast[index] - emaSlow[index];
+                macd[index] = emaFast[index] - emaSlow[index];
+            }
+
+            
+            Debug.Assert(macd.Length == data.Length);
+            return (macd, Ema(macd, signalPeriod));
+        }
+
         public static double[] Tema(double[] data, int period)
         {
             // ema1 = ema(close, n)

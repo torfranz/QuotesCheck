@@ -176,6 +176,11 @@
         {
             return ROC(symbol.Data(sourceType), period);
         }
+
+        public static double[] MOM(SymbolInformation symbol, SourceType sourceType, int period)
+        {
+            return MOM(symbol.Data(sourceType), period);
+        }
         public static double[] RSI(SymbolInformation symbol, SourceType sourceType, int period)
         {
             return RSI(symbol.Data(sourceType), period);
@@ -803,6 +808,21 @@
 
             Debug.Assert(roc.Length == data.Length);
             return roc;
+        }
+
+        private static double[] MOM(double[] data, int period)
+        {
+            // mom = close - close[n]
+
+            var mom = Create(data.Length);
+
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                mom[index] = data[index] - data.At(index + period);
+            }
+
+            Debug.Assert(mom.Length == data.Length);
+            return mom;
         }
 
         private static double[] RSI(double[] data, int n)

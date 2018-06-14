@@ -50,7 +50,7 @@
             var (slowStochasticLine, slowSmoothedLine) = Indicators.SSTOC(symbol, 5, 5, 3);
             var pcr = Indicators.PCR(symbol, 20);
             var (smi, smiSignal) = Indicators.SMI(symbol, 5, 3);
-
+            var mom = Indicators.MOM(symbol, SourceType.Close, 20);
 
             var md = Indicators.MD(symbol, SourceType.Close, 20); // --> not correct
 

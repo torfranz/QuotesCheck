@@ -52,6 +52,9 @@
             var (smi, smiSignal) = Indicators.SMI(symbol, 5, 3);
             var mom = Indicators.MOM(symbol, SourceType.Close, 20);
             var(pK, pD, pJ, pKema) = Indicators.KDJ(symbol, 5, 3, 3);
+            var aroonUp = Indicators.AROUp(symbol, SourceType.High, 20);
+            var aroondown = Indicators.ARODown(symbol, SourceType.Low, 20);
+
 
             var md = Indicators.MD(symbol, SourceType.Close, 20); // --> not correct
 

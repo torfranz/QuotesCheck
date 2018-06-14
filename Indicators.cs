@@ -272,6 +272,16 @@
             return (sV2, ssV2);
         }
 
+        public static double[] AROUp(SymbolInformation symbol, SourceType sourceType, int period)
+        {
+            return AROUp(symbol.Data(sourceType), period);
+        }
+
+        public static double[] ARODown(SymbolInformation symbol, SourceType sourceType, int period)
+        {
+            return ARODown(symbol.Data(sourceType), period);
+        }
+
         public static (double[] StochasticLine, double[] SmoothedLine) FSTOC(SymbolInformation symbol, int periodK, int periodD)
         {
             // n = integer("%%K period", 5)
@@ -584,6 +594,54 @@
         public static double[] KAMA(SymbolInformation symbol, SourceType sourceType, int length)
         {
             return KAMA(symbol.Data(sourceType), length);
+        }
+
+        private static double[] AROUp(double[] data, int period)
+        {
+            // aroonUp = 100 * (n - offsetHighest(high, n)) / n
+
+            var aroonUp = Create(data.Length);
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                var offset = 0;
+                var highest = data[index];
+                for (var i = 1; i < period; i++)
+                {
+                    if (data.At(index + i) > highest)
+                    {
+                        highest = data.At(index + i);
+                        offset = i;
+                    }
+                }
+
+                aroonUp[index] = 100.0 * (period - offset) / period;
+            }
+
+            return aroonUp;
+        }
+
+        private static double[] ARODown(double[] data, int period)
+        {
+            // aroonDown = 100 * (n - offsetLowest(low, n)) / n
+
+            var aroonDown = Create(data.Length);
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                var offset = 0;
+                var lowest = data[index];
+                for (var i = 1; i < period; i++)
+                {
+                    if (data.At(index + i) < lowest)
+                    {
+                        lowest = data.At(index + i);
+                        offset = i;
+                    }
+                }
+
+                aroonDown[index] = 100.0 * (period - offset) / period;
+            }
+
+            return aroonDown;
         }
 
         private static double[] TR(SymbolInformation symbol, int period)

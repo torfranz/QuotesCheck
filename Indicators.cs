@@ -2,7 +2,7 @@
 {
     using System;
     using System.Diagnostics;
-    
+
     internal static class Indicators
     {
         public static double[] EMA(SymbolInformation symbol, SourceType sourceType, int period)
@@ -168,7 +168,7 @@
             // adx = sma(dmi, n)
 
             var (dmi, _, _) = DMI(symbol, period);
-            
+
             return SMA(dmi, period);
         }
 
@@ -181,6 +181,7 @@
         {
             return MOM(symbol.Data(sourceType), period);
         }
+
         public static double[] RSI(SymbolInformation symbol, SourceType sourceType, int period)
         {
             return RSI(symbol.Data(sourceType), period);
@@ -223,7 +224,11 @@
             return (dmi, diPlus, diMinus);
         }
 
-        public static (double[] StochasticLine, double[] TriggerLine) DSSBR(SymbolInformation symbol, int stochasticPeriod, int smoothingPeriod, int triggerPeriod)
+        public static (double[] StochasticLine, double[] TriggerLine) DSSBR(
+            SymbolInformation symbol,
+            int stochasticPeriod,
+            int smoothingPeriod,
+            int triggerPeriod)
         {
             // # input
             // n = integer("Stochastic Period", 21)
@@ -235,7 +240,6 @@
             // ll = lowest(low, n)
             // v1 = skip((hh == ll) ? 0 : (close - ll) / (hh - ll) * 100, n - 1)
             // smoothedV1 = ema(v1, m)
-
 
             // hh = highest(smoothedV1, n)
             // ll = lowest(smoothedV1, n)
@@ -268,7 +272,7 @@
             return (sV2, ssV2);
         }
 
-        public static (double[] StochasticLine, double[] SmoothedLine) FSTOC(SymbolInformation symbol, int KPeriod, int DPeriod)
+        public static (double[] StochasticLine, double[] SmoothedLine) FSTOC(SymbolInformation symbol, int periodK, int periodD)
         {
             // n = integer("%%K period", 5)
             // n2 = integer("%%D period", 3)
@@ -280,8 +284,8 @@
             // smoothed = sma(fstoc, n2)
 
             var close = symbol.Close;
-            var hh = HH(symbol.High, KPeriod);
-            var ll = LL(symbol.Low, KPeriod);
+            var hh = HH(symbol.High, periodK);
+            var ll = LL(symbol.Low, periodK);
 
             var fstoc = Create(close.Length);
             for (var index = close.Length - 1; index >= 0; index--)
@@ -289,9 +293,44 @@
                 fstoc[index] = hh[index] == ll[index] ? 0 : (close[index] - ll[index]) / (hh[index] - ll[index]) * 100;
             }
 
-            var smoothed = SMA(fstoc, DPeriod);
-            
+            var smoothed = SMA(fstoc, periodD);
+
             return (fstoc, smoothed);
+        }
+
+        public static (double[] pK, double[] pD, double[] pJ, double[] pKema) KDJ(SymbolInformation symbol, int lenL, int lenS, int lenK)
+        {
+            // lenL = integer("Period 1",5) 
+            // lenS = integer("Period 2", 3)
+            // lenK = integer("%%K Smoothing", 3)
+
+            // # calculation
+            // pK = 100 * ((close - lowest(close, lenL)) / (highest(high, lenL) - lowest(low, lenL)))
+            // pD = 100 * (highest(high, lenS) / lowest(low, lenS))
+            // pJ = (3 * pD) - (2 * pK)
+
+            // pKema = ema(pK, lenK)
+
+            var close = symbol.Close;
+            var hhL = HH(symbol.High, lenL);
+            var llL = LL(symbol.Low, lenL);
+            var lcL = LL(symbol.Close, lenL);
+            var hhS = HH(symbol.High, lenS);
+            var llS = LL(symbol.Low, lenS);
+
+            var pK = Create(close.Length);
+            var pD = Create(close.Length);
+            var pJ = Create(close.Length);
+            for (var index = close.Length - 1; index >= 0; index--)
+            {
+                pK[index] = 100 * ((close[index] - lcL[index]) / (hhL[index] - llL[index]));
+                pD[index] = 100 * (hhS[index] / llS[index]);
+                pJ[index] = 3 * pD[index] - 2 * pK[index];
+            }
+
+            var pKema = EMA(pK, lenK);
+
+            return (pK, pD, pJ, pKema);
         }
 
         public static (double[] StochasticLine, double[] SmoothedLine) SSTOC(SymbolInformation symbol, int KPeriod, int DPeriod, int DPeriod2)
@@ -469,7 +508,7 @@
                 var totalSumShort = 0.0;
                 var totalCountLong = 0;
                 var totalSumLong = 0.0;
-                for (int i = 0; i < period; i++)
+                for (var i = 0; i < period; i++)
                 {
                     var high1 = high.At(index + i + 1);
                     var high0 = high.At(index + i);
@@ -498,28 +537,6 @@
             }
 
             return (finalSafetyShort, finalSafetyLong);
-        }
-
-        private static double[] TR(SymbolInformation symbol, int period)
-        {
-            // tr  = sum(max(high - low, high - close[1], low - close[1]), n)
-            var close = symbol.Close;
-            var high = symbol.High;
-            var low = symbol.Low;
-
-            var max = Create(close.Length);
-            for (var index = close.Length - 1; index >= 0; index--)
-            {
-                max[index] = Math.Max(Math.Max(high[index] - low[index], high[index] - close.At(index + 1)), low[index] - close.At(index + 1));
-            }
-
-            var tr = Create(close.Length);
-            for (var index = close.Length - 1; index >= 0; index--)
-            {
-                tr[index] = Sum(max, index, period);
-            }
-
-            return tr;
         }
 
         public static double[] ATR(SymbolInformation symbol, int period)
@@ -567,6 +584,28 @@
         public static double[] KAMA(SymbolInformation symbol, SourceType sourceType, int length)
         {
             return KAMA(symbol.Data(sourceType), length);
+        }
+
+        private static double[] TR(SymbolInformation symbol, int period)
+        {
+            // tr  = sum(max(high - low, high - close[1], low - close[1]), n)
+            var close = symbol.Close;
+            var high = symbol.High;
+            var low = symbol.Low;
+
+            var max = Create(close.Length);
+            for (var index = close.Length - 1; index >= 0; index--)
+            {
+                max[index] = Math.Max(Math.Max(high[index] - low[index], high[index] - close.At(index + 1)), low[index] - close.At(index + 1));
+            }
+
+            var tr = Create(close.Length);
+            for (var index = close.Length - 1; index >= 0; index--)
+            {
+                tr[index] = Sum(max, index, period);
+            }
+
+            return tr;
         }
 
         private static double[] EMA(double[] data, int period)
@@ -859,7 +898,7 @@
             Debug.Assert(rsi.Length == data.Length);
             return rsi;
         }
-        
+
         private static double[] VOLA(double[] data, int period, int periodYear)
         {
             // # input

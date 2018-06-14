@@ -55,6 +55,11 @@
             return TEMA(symbol.Data(sourceType), period);
         }
 
+        public static double[] DIX(SymbolInformation symbol, SourceType sourceType, int period)
+        {
+            return DIX(symbol.Data(sourceType), period);
+        }
+
         public static double[] VOLA(SymbolInformation symbol, SourceType sourceType, int period, int periodYear)
         {
             return VOLA(symbol.Data(sourceType), period, periodYear);
@@ -603,6 +608,30 @@
 
             Debug.Assert(tema.Length == data.Length);
             return tema;
+        }
+
+        private static double[] DIX(double[] data, int period)
+        {
+            // n = integer("Period", 28)
+
+            // # calculation
+            // mc = sum(close, n) / n
+            // dix = skip(100 * (close - mc) / mc, n - 1)
+
+            // # plotting
+            // plotThreshold("threshold", dix, 0, 0)("legend", 0)
+            // plotLine("line", dix)
+
+            var dix = Create(data.Length);
+
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                var mc = Sum(data, index, period) / period;
+                dix[index] = 100 * (data[index] - mc) / mc;
+            }
+
+            Debug.Assert(dix.Length == data.Length);
+            return dix;
         }
 
         private static double[] ROC(double[] data, int period)

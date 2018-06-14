@@ -108,6 +108,7 @@
                     Debug.Assert(daysSpan <= 1);
                     if (daysSpan == 1)
                     {
+                        Trace.TraceInformation($"Add new data {newSeries[index]}");
                         this.TimeSeries.Insert(0, newSeries[index]);
                     }
                 }

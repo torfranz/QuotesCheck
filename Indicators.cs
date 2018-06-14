@@ -359,6 +359,51 @@
             return pcr;
         }
 
+        public static (double[] Smi, double[] signal) SMI(SymbolInformation symbol, int periodK, int periodD)
+        {
+            // a = integer("K", 5)
+            // b = integer("D", 3)
+
+            // # calculation
+            // ll = lowest(low, a)
+            // hh = highest(high, a)
+            // diff = hh - ll
+
+            // rdiff = close - (hh + ll) / 2
+
+            // avgrel = ema(ema(rdiff, b), b)
+            // avgdiff = ema(ema(diff, b), b)
+
+            // SMI = avgdiff != 0 ? (avgrel / (avgdiff / 2) * 100) : 0
+            // SMIsignal = ema(SMI, b)
+
+            var close = symbol.Close;
+            var hh = HH(symbol, periodK);
+            var ll = LL(symbol, periodK);
+
+            var diff = Create(close.Length);
+            var rdiff = Create(close.Length);
+
+            for (var index = close.Length - 1; index >= 0; index--)
+            {
+                diff[index] = hh[index] - ll[index];
+                rdiff[index] = close[index] - (hh[index] + ll[index]) / 2;
+            }
+
+            var avgrel = EMA(EMA(rdiff, periodD), periodD);
+            var avgdiff = EMA(EMA(diff, periodD), periodD);
+
+            var smi = Create(close.Length);
+            for (var index = close.Length - 1; index >= 0; index--)
+            {
+                smi[index] = avgdiff[index] != 0 ? avgrel[index] / (avgdiff[index] / 2) * 100 : 0;
+            }
+
+            var signal = EMA(smi, periodD);
+
+            return (smi, signal);
+        }
+
         public static double[] OBOS(SymbolInformation symbol, int period)
         {
             // n = integer("Period", 14)

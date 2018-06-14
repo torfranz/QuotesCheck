@@ -40,6 +40,7 @@
             var roc = Indicators.ROC(symbol, SourceType.Close, 20);
             var obos = Indicators.OBOS(symbol, 20);
             var rsi = Indicators.RSI(symbol, SourceType.Close, 20);
+            var (shortStop, longStop) = Indicators.ELSZ(symbol, 20, 2.5);
 
             var md = Indicators.MD(symbol, SourceType.Close, 20); // --> not correct
         }

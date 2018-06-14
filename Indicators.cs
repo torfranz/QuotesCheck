@@ -265,6 +265,75 @@
             return obos;
         }
 
+        public static (double[] ShortStop, double[] LongStop) ELSZ(SymbolInformation symbol, int period, double coeffienct)
+        {
+            // # input
+            // coeff = float("CoEff", 2.5)
+            // lookbackLength = integer("LookBackLength", 15)
+
+            // # calculation
+            // countShort = high > high[1] ? 1 : 0
+            // diffShort = high > high[1] ? high - high[1] : 0
+            // totalCountShort = sum(countShort, lookbackLength)
+            // totalSumShort = sum(diffShort, lookbackLength)
+            // penAvgShort = (totalSumShort / totalCountShort)
+            // safetyShort = high[1] + (penAvgShort[1] * coeff)
+            // finalSafetyShort = min(min(safetyShort, safetyShort[1]), safetyShort[2])
+
+            // count = low < low[1] ? 1 : 0
+            // diff = low < low[1] ? low[1] - low : 0
+            // totalCount = sum(count, lookbackLength)
+            // totalSum = sum(diff, lookbackLength)
+            // penAvg = (totalSum / totalCount)
+            // safety = low[1] - (penAvg[1] * coeff)
+            // finalSafetyLong = max(max(safety, safety[1]), safety[2])
+
+            var close = symbol.Close;
+            var high = symbol.High;
+            var low = symbol.Low;
+            var finalSafetyShort = Create(close.Length);
+            var finalSafetyLong = Create(close.Length);
+            var penAvgShort = Create(close.Length);
+            var safetyShort = Create(close.Length);
+            var penAvgLong = Create(close.Length);
+            var safetyLong = Create(close.Length);
+            for (var index = finalSafetyShort.Length - 1; index >= 0; index--)
+            {
+                var totalCountShort = 0;
+                var totalSumShort = 0.0;
+                var totalCountLong = 0;
+                var totalSumLong = 0.0;
+                for (int i = 0; i < period; i++)
+                {
+                    var high1 = high.At(index + i + 1);
+                    var high0 = high.At(index + i);
+                    if (high0 > high1)
+                    {
+                        totalCountShort++;
+                        totalSumShort += high0 - high1;
+                    }
+
+                    var low1 = low.At(index + i + 1);
+                    var low0 = low.At(index + i);
+                    if (low0 < low1)
+                    {
+                        totalCountLong++;
+                        totalSumLong += low1 - low0;
+                    }
+                }
+
+                penAvgShort[index] = totalSumShort / totalCountShort;
+                safetyShort[index] = high.At(index + 1) + penAvgShort.At(index + 1) * coeffienct;
+                finalSafetyShort[index] = Math.Min(Math.Min(safetyShort[index], safetyShort.At(index + 1)), safetyShort.At(index + 2));
+
+                penAvgLong[index] = totalSumLong / totalCountLong;
+                safetyLong[index] = low.At(index + 1) - penAvgLong.At(index + 1) * coeffienct;
+                finalSafetyLong[index] = Math.Max(Math.Max(safetyLong[index], safetyLong.At(index + 1)), safetyLong.At(index + 2));
+            }
+
+            return (finalSafetyShort, finalSafetyLong);
+        }
+
         private static double[] TR(SymbolInformation symbol, int period)
         {
             // tr  = sum(max(high - low, high - close[1], low - close[1]), n)

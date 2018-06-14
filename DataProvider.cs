@@ -24,7 +24,6 @@
             Trace.TraceInformation($"Download {(size == Const_TIME_SERIES_DAILY.TIME_SERIES_DAILY_outputsize.compact ? "compact" : "full")} data for {symbol.ISIN}");
             var list = new List<TimeSeries>();
 
-            var previousSeries = new TimeSeries();
             foreach (var series in this.connection.GetQueryObject_TIME_SERIES_DAILY().Query(symbol.Symbol, size).Data.TimeSeries)
             {
                 var close = double.Parse(series.close);
@@ -34,22 +33,16 @@
                 var volume = int.Parse(series.volume);
                 var day = DateTime.Parse(series.DateTime);
 
-                if (close == 0 && open == 0)
-                {
-                    Trace.TraceWarning($"Data at {day:d} is missing and will be substituted with previous day data");
-                }
-
                 var timeSeries = new TimeSeries
                                      {
-                                         Close = close > 0 ? close : previousSeries.Close,
-                                         High = high > 0 ? high : previousSeries.High,
-                                         Open = open > 0 ? open : previousSeries.Open,
-                                         Low = low > 0 ? low : previousSeries.Low,
-                                         Volume = volume > 0 ? volume : previousSeries.Volume,
+                                         Close = close,
+                                         High = high,
+                                         Open = open,
+                                         Low = low,
+                                         Volume = volume,
                                          Day = day
                                      };
                 list.Add(timeSeries);
-                previousSeries = timeSeries;
             }
 
             return list;

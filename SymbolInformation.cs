@@ -90,25 +90,44 @@
             if (this.TimeSeries.Count == 0)
             {
                 this.TimeSeries = this.dataProvider.GetTimeSeries(this);
-                return;
+            }
+            else
+            {
+                // remove the first entry to get it always updated
+                this.TimeSeries.RemoveAt(0);
+
+                // check how long ago our latest data point is away
+                var daysSpan = (DateTime.Now - this.TimeSeries[0].Day).Days;
+                var newSeries = this.dataProvider.GetTimeSeries(
+                    this,
+                    daysSpan > 90 ? Const_TIME_SERIES_DAILY.TIME_SERIES_DAILY_outputsize.full : Const_TIME_SERIES_DAILY.TIME_SERIES_DAILY_outputsize.compact);
+
+                for (var index = newSeries.Count - 1; index >= 0; index--)
+                {
+                    daysSpan = (newSeries[index].Day - this.TimeSeries[0].Day).Days;
+                    Debug.Assert(daysSpan <= 1);
+                    if (daysSpan == 1)
+                    {
+                        this.TimeSeries.Insert(0, newSeries[index]);
+                    }
+                }
             }
 
-            // remove the first entry to get it always updated
-            this.TimeSeries.RemoveAt(0);
+            Debug.Assert(this.TimeSeries.Count > 2);
 
-            // check how long ago our latest data point is away
-            var daysSpan = (DateTime.Now - this.TimeSeries[0].Day).Days;
-            var newSeries = this.dataProvider.GetTimeSeries(
-                this,
-                daysSpan > 90 ? Const_TIME_SERIES_DAILY.TIME_SERIES_DAILY_outputsize.full : Const_TIME_SERIES_DAILY.TIME_SERIES_DAILY_outputsize.compact);
-
-            for (var index = newSeries.Count - 1; index >= 0; index--)
+            // check for missing data, replace with previous day data
+            for (var i = 1; i < this.TimeSeries.Count; i++)
             {
-                daysSpan = (newSeries[index].Day - this.TimeSeries[0].Day).Days;
-                Debug.Assert(daysSpan <= 1);
-                if (daysSpan == 1)
+                var series = this.TimeSeries[i];
+                if ((series.Close == 0) || (series.Open == 0) || (series.High == 0) || (series.Low == 0) || (series.Volume == 0))
                 {
-                    this.TimeSeries.Insert(0, newSeries[index]);
+                    Trace.TraceWarning($"Data {series} is (partially) missing and will be substituted with previous day data");
+                    var previousSeries = this.TimeSeries[i - 1];
+                    series.Close = series.Close != 0 ? series.Close : previousSeries.Close;
+                    series.Open = series.Open != 0 ? series.Open : previousSeries.Open;
+                    series.High = series.High != 0 ? series.High : previousSeries.High;
+                    series.Low = series.Low != 0 ? series.Low : previousSeries.Low;
+                    series.Volume = series.Volume != 0 ? series.Volume : previousSeries.Volume;
                 }
             }
         }

@@ -2,7 +2,7 @@
 {
     using System;
     using System.Diagnostics;
-
+    
     internal static class Indicators
     {
         public static double[] EMA(SymbolInformation symbol, SourceType sourceType, int period)
@@ -171,7 +171,10 @@
         {
             return ROC(symbol.Data(sourceType), period);
         }
-
+        public static double[] RSI(SymbolInformation symbol, SourceType sourceType, int period)
+        {
+            return RSI(symbol.Data(sourceType), period);
+        }
 
         public static (double[] DMI, double[] DIPlus, double[] DIMinus) DMI(SymbolInformation symbol, int period)
         {
@@ -238,6 +241,28 @@
             }
 
             return cci;
+        }
+
+        public static double[] OBOS(SymbolInformation symbol, int period)
+        {
+            // n = integer("Period", 14)
+
+            // # calculation
+            // denom = highest(high, n) - lowest(low, n)
+            // obos = denom == 0 ? 0 : (close - lowest(low, n)) / denom * 100
+
+            var highest = HH(symbol, period);
+            var lowest = LL(symbol, period);
+            var close = symbol.Close;
+
+            var obos = Create(close.Length);
+            for (var index = close.Length - 1; index >= 0; index--)
+            {
+                var denom = highest[index] - lowest[index];
+                obos[index] = (close[index] - lowest[index]) / denom * 100;
+            }
+
+            return obos;
         }
 
         private static double[] TR(SymbolInformation symbol, int period)
@@ -526,6 +551,41 @@
             return roc;
         }
 
+        private static double[] RSI(double[] data, int n)
+        {
+            // # input
+            // n = integer("Period", 14)
+
+            // # calculation
+            // w = 1 / n
+
+            // up = close > close[1] ? close - close[1] : 0
+            // down = close > close[1] ? 0 : close[1] - close
+
+            // upSmoothed = up * w + (1 - w) * nn(upSmoothed[1], 0)
+            // downSmoothed = down * w + (1 - w) * nn(downSmoothed[1], 0)
+
+            // rsi = 100 - (100 / ((1 + upSmoothed / downSmoothed)))
+
+            var w = 1.0 / n;
+            var rsi = Create(data.Length);
+            var upSmoothed = Create(data.Length);
+            var downSmoothed = Create(data.Length);
+
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                var up = data[index] > data.At(index + 1) ? data[index] - data.At(index + 1) : 0;
+                var down = data[index] > data.At(index + 1) ? 0 : data.At(index + 1) - data[index];
+                upSmoothed[index] = up * w + (1 - w) * nn(upSmoothed.At(index + 1));
+                downSmoothed[index] = down * w + (1 - w) * nn(downSmoothed.At(index + 1));
+
+                rsi[index] = 100.0 - 100.0 / (1 + upSmoothed[index] / downSmoothed[index]);
+            }
+
+            Debug.Assert(rsi.Length == data.Length);
+            return rsi;
+        }
+        
         private static double[] VOLA(double[] data, int period, int periodYear)
         {
             // # input

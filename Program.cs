@@ -38,6 +38,8 @@
             var (dmi, diPlus, diMinus) = Indicators.DMI(symbol, 20);
             var adx = Indicators.ADX(symbol, 20);
             var roc = Indicators.ROC(symbol, SourceType.Close, 20);
+            var obos = Indicators.OBOS(symbol, 20);
+            var rsi = Indicators.RSI(symbol, SourceType.Close, 20);
 
             var md = Indicators.MD(symbol, SourceType.Close, 20); // --> not correct
         }

@@ -46,7 +46,8 @@
             var (shortStop, longStop) = Indicators.ELSZ(symbol, 20, 2.5);
             var dix = Indicators.DIX(symbol, SourceType.Close, 20);
             var (stochasticLine,triggerLine) = Indicators.DSSBR(symbol, 21, 3, 8);
-            var (fastStochasticLine, smoothedLine) = Indicators.FSTOC(symbol, 5, 3);
+            var (fastStochasticLine, fastSmoothedLine) = Indicators.FSTOC(symbol, 5, 3);
+            var (slowStochasticLine, slowSmoothedLine) = Indicators.SSTOC(symbol, 5, 5, 3);
 
             var md = Indicators.MD(symbol, SourceType.Close, 20); // --> not correct
 

@@ -289,6 +289,24 @@
             return (fstoc, smoothed);
         }
 
+        public static (double[] StochasticLine, double[] SmoothedLine) SSTOC(SymbolInformation symbol, int KPeriod, int DPeriod, int DPeriod2)
+        {
+            // n = integer("%%K period", 5)
+            // n2 = integer("%%D period", 5)
+            // n3 = integer("2th %%D period", 3)
+
+            // # calculation
+            // hh = highest(high, n)
+            // ll = lowest(low, n)
+            // fstoc = (hh == ll) ? 0 : ((close - ll) / (hh - ll) * 100)
+            // sstoc = sma(fstoc, n2)
+            // smoothed = sma(sstoc, n3)
+
+            var (_, sstoc) = FSTOC(symbol, KPeriod, DPeriod);
+            var smoothed = SMA(sstoc, DPeriod2);
+            return (sstoc, smoothed);
+        }
+
         public static double[] CCI(SymbolInformation symbol, int period)
         {
             // n = integer("Period", 20)

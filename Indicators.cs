@@ -218,6 +218,51 @@
             return (dmi, diPlus, diMinus);
         }
 
+        public static (double[] StochasticLine, double[] TriggerLine) DSSBR(SymbolInformation symbol, int stochasticPeriod, int smoothingPeriod, int triggerPeriod)
+        {
+            // # input
+            // n = integer("Stochastic Period", 21)
+            // m = integer("Smoothing Period", 3)
+            // tr = integer("Trigger Period", 8)
+
+            // # calculation
+            // hh = highest(high, n)
+            // ll = lowest(low, n)
+            // v1 = skip((hh == ll) ? 0 : (close - ll) / (hh - ll) * 100, n - 1)
+            // smoothedV1 = ema(v1, m)
+
+
+            // hh = highest(smoothedV1, n)
+            // ll = lowest(smoothedV1, n)
+            // v2 = skip((hh == ll) ? 0 : (smoothedV1 - ll) / (hh - ll) * 100, n - 1)
+
+            // sV2 = ema(v2, m)
+            // ssV2 = ema(sV2, tr)
+
+            var close = symbol.Close;
+            var hh = HH(symbol.High, stochasticPeriod);
+            var ll = LL(symbol.Low, stochasticPeriod);
+
+            var v = Create(close.Length);
+            for (var index = close.Length - 1; index >= 0; index--)
+            {
+                v[index] = hh[index] == ll[index] ? 0 : (close[index] - ll[index]) / (hh[index] - ll[index]) * 100;
+            }
+
+            var smoothedV1 = EMA(v, smoothingPeriod);
+            hh = HH(smoothedV1, stochasticPeriod);
+            ll = LL(smoothedV1, stochasticPeriod);
+
+            for (var index = close.Length - 1; index >= 0; index--)
+            {
+                v[index] = hh[index] == ll[index] ? 0 : (smoothedV1[index] - ll[index]) / (hh[index] - ll[index]) * 100;
+            }
+
+            var sV2 = EMA(v, smoothingPeriod);
+            var ssV2 = EMA(sV2, triggerPeriod);
+            return (sV2, ssV2);
+        }
+
         public static double[] CCI(SymbolInformation symbol, int period)
         {
             // n = integer("Period", 20)

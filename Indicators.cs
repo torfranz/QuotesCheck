@@ -172,6 +172,24 @@
             return SMA(dmi, period);
         }
 
+        public static double[] AOS(SymbolInformation symbol, int period)
+        {
+            // aos = aroonUp - aroonDown
+
+            var close = symbol.Close;
+            var aroonUp = AROUp(symbol.High, period);
+            var aroonDown = ARODown(symbol.Low, period);
+
+            var aos = Create(close.Length);
+
+            for (var index = close.Length - 1; index >= 0; index--)
+            {
+                aos[index] = aroonUp[index] - aroonDown[index];
+            }
+
+            return aos;
+        }
+
         public static double[] ROC(SymbolInformation symbol, SourceType sourceType, int period)
         {
             return ROC(symbol.Data(sourceType), period);

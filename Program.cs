@@ -54,7 +54,8 @@
             var(pK, pD, pJ, pKema) = Indicators.KDJ(symbol, 5, 3, 3);
             var aroonUp = Indicators.AROUp(symbol, SourceType.High, 20);
             var aroondown = Indicators.ARODown(symbol, SourceType.Low, 20);
-
+            var aos = Indicators.AOS(symbol, 20);
+            
 
             var md = Indicators.MD(symbol, SourceType.Close, 20); // --> not correct
 

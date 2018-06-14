@@ -337,6 +337,28 @@
             return cci;
         }
 
+        public static double[] PCR(SymbolInformation symbol, int period)
+        {
+            // n = integer("%%R period", 14)
+
+            // # calculation
+            // hhlld = highest(high, n) - lowest(low, n)
+            // pcr = skip(hhlld ? 100 - ((highest(high, n) - close) / hhlld) * 100 : 0, n - 1)
+
+            var close = symbol.Close;
+            var hh = HH(symbol, period);
+            var ll = LL(symbol, period);
+
+            var pcr = Create(close.Length);
+            for (var index = close.Length - 1; index >= 0; index--)
+            {
+                var hhlld = hh[index] - ll[index];
+                pcr[index] = hhlld != 0 ? 100 - (hh[index] - close[index]) / hhlld * 100 : 0;
+            }
+
+            return pcr;
+        }
+
         public static double[] OBOS(SymbolInformation symbol, int period)
         {
             // n = integer("Period", 14)

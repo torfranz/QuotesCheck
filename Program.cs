@@ -48,6 +48,7 @@
             var (stochasticLine,triggerLine) = Indicators.DSSBR(symbol, 21, 3, 8);
             var (fastStochasticLine, fastSmoothedLine) = Indicators.FSTOC(symbol, 5, 3);
             var (slowStochasticLine, slowSmoothedLine) = Indicators.SSTOC(symbol, 5, 5, 3);
+            var pcr = Indicators.PCR(symbol, 20);
 
             var md = Indicators.MD(symbol, SourceType.Close, 20); // --> not correct
 

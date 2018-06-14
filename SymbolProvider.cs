@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.IO;
     using System.Linq;
     using System.Net;
@@ -56,32 +57,19 @@
 
         public SymbolInformation LookUpISIN(string isin)
         {
-            isin = isin.ToUpperInvariant();
-
-            // check if we know this already
-            if (this.Symbols.ContainsKey(isin)) return this.Symbols[isin];
-
-            // check if we can load a file from disk
-            var dataPath = Path.Combine(Folder, $"{isin}.json");
-            if (File.Exists(dataPath))
+            Trace.TraceInformation($"Lookup data for ISIN {isin}");
+            Trace.Indent();
+            try
             {
-                var symbol = this.LoadSymbolData(dataPath);
+                isin = isin.ToUpperInvariant();
 
-                // are time series still current, no => update
-                if (symbol.TimeSeries.Count == 0 || symbol.TimeSeries[0].Day.DayOfYear < DateTime.Now.DayOfYear
-                                              || symbol.TimeSeries[0].Day.Year < DateTime.Now.Year)
-                {
-                    symbol.UpdateTimeSeries();
-                    this.SaveSymbolData(dataPath, symbol);
-                }
+                // check if we know this already
+                if (this.Symbols.ContainsKey(isin)) return this.Symbols[isin];
 
-                this.Symbols.Add(isin, symbol);
-                return symbol;
-            }
-            else
-            {
-                // nothing exists so far, create new 
-                var symbol = this.EmptySymbols.First(item => Equals(item.ISIN.ToUpperInvariant(), isin));
+                // check if we can load a file from disk
+                var dataPath = Path.Combine(Folder, $"{isin}.json");
+                var symbol = File.Exists(dataPath) ? this.LoadSymbolData(dataPath) : this.EmptySymbols.First(item => Equals(item.ISIN.ToUpperInvariant(), isin));
+
                 symbol.UpdateTimeSeries();
                 this.SaveSymbolData(dataPath, symbol);
 
@@ -89,15 +77,21 @@
 
                 return symbol;
             }
+            finally
+            {
+                Trace.Unindent();
+            }
         }
 
         private void SaveSymbolData(string dataPath, SymbolInformation symbol)
         {
+            Trace.TraceInformation($"Writing data to {dataPath}");
             File.WriteAllText(dataPath, JsonConvert.SerializeObject(symbol, this.jsonSettings));
         }
 
         private SymbolInformation LoadSymbolData(string dataPath)
         {
+            Trace.TraceInformation($"Reading data from {dataPath}");
             return JsonConvert.DeserializeObject<SymbolInformation>(File.ReadAllText(dataPath), this.jsonSettings);
         }
     }

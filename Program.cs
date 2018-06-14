@@ -1,5 +1,7 @@
 ﻿namespace QuotesCheck
 {
+    using System;
+    using System.Diagnostics;
     using System.Globalization;
     using System.Threading;
 
@@ -7,6 +9,7 @@
     {
         private static void Main(string[] args)
         {
+            Trace.TraceInformation($"Started at {DateTime.Now}");
             // use always invariant culture
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
@@ -43,6 +46,9 @@
             var (shortStop, longStop) = Indicators.ELSZ(symbol, 20, 2.5);
 
             var md = Indicators.MD(symbol, SourceType.Close, 20); // --> not correct
+
+            Trace.TraceInformation($"Exited at {DateTime.Now}");
+            Trace.TraceInformation(string.Empty);
         }
     }
 }

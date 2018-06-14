@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
 
     using Avapi;
     using Avapi.AvapiTIME_SERIES_DAILY;
@@ -20,6 +21,7 @@
             SymbolInformation symbol,
             Const_TIME_SERIES_DAILY.TIME_SERIES_DAILY_outputsize size = Const_TIME_SERIES_DAILY.TIME_SERIES_DAILY_outputsize.full)
         {
+            Trace.TraceInformation($"Download {(size == Const_TIME_SERIES_DAILY.TIME_SERIES_DAILY_outputsize.compact ? "compact" : "full")} data for {symbol.ISIN}");
             var list = new List<TimeSeries>();
 
             var previousSeries = new TimeSeries();
@@ -31,6 +33,11 @@
                 var low = double.Parse(series.low);
                 var volume = int.Parse(series.volume);
                 var day = DateTime.Parse(series.DateTime);
+
+                if (close == 0 && open == 0)
+                {
+                    Trace.TraceWarning($"Data at {day:d} is missing and will be substituted with previous day data");
+                }
 
                 var timeSeries = new TimeSeries
                                      {

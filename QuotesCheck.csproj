@@ -54,6 +54,7 @@
   <ItemGroup>
     <Compile Include="DataProvider.cs" />
     <Compile Include="Indicators.cs" />
+    <Compile Include="MyTextTraceListener.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SourceType.cs" />

@@ -3,6 +3,7 @@
     using System;
     using System.Diagnostics;
     using System.Globalization;
+    using System.Linq;
     using System.Threading;
 
     using Accord.Math.Optimization;
@@ -18,7 +19,8 @@
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
             var symbolProvider = new SymbolProvider();
-            var symbol = symbolProvider.LookUpISIN("DE000A0D9PT0", false);
+
+            var symbols = Indizes.DAX.ToDictionary(isin => isin, isin => symbolProvider.LookUpISIN(isin, false));
 
             //var ema20 = Indicators.EMA(symbol, SourceType.Close, 20);
             //var dema20 = Indicators.DEMA(symbol, SourceType.Close, 20);
@@ -68,6 +70,7 @@
 
             // generate fixtures
             var sw = Stopwatch.StartNew();
+            var symbol = symbols[Indizes.DAX[0]];
             evaluator.GenerateFixtures(symbol);
             Trace.TraceInformation($"Generating fixtures took {sw.ElapsedMilliseconds:F0}ms for {symbol}");
 
@@ -87,7 +90,7 @@
             {
                 evaluator.Evaluate(symbol, solver.Solution).Save("BestData");
             }
-            
+
             Trace.Unindent();
             Trace.TraceInformation($"Exited at {DateTime.Now}");
             Trace.TraceInformation(string.Empty);

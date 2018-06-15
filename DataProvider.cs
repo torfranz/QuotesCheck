@@ -21,10 +21,39 @@
             SymbolInformation symbol,
             Const_TIME_SERIES_DAILY.TIME_SERIES_DAILY_outputsize size = Const_TIME_SERIES_DAILY.TIME_SERIES_DAILY_outputsize.full)
         {
-            Trace.TraceInformation($"Download {(size == Const_TIME_SERIES_DAILY.TIME_SERIES_DAILY_outputsize.compact ? "compact" : "full")} data for {symbol.ISIN}");
+            Trace.TraceInformation(
+                $"Download {(size == Const_TIME_SERIES_DAILY.TIME_SERIES_DAILY_outputsize.compact ? "compact" : "full")} data for {symbol.ISIN}");
             var list = new List<TimeSeries>();
 
-            foreach (var series in this.connection.GetQueryObject_TIME_SERIES_DAILY().Query(symbol.Symbol, size).Data.TimeSeries)
+            IAvapiResponse_TIME_SERIES_DAILY_Content seriesDaily = null;
+
+            var retry = 0;
+            while (seriesDaily == null)
+            {
+                try
+                {
+                    var response = this.connection.GetQueryObject_TIME_SERIES_DAILY().Query(symbol.Symbol, size);
+                    if (response.Data != null)
+                    {
+                        seriesDaily = response.Data;
+                    }
+                    else
+                    {
+                        var i = 0;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    if (retry == 10)
+                    {
+                        throw;
+                    }
+
+                    retry++;
+                }
+            }
+
+            foreach (var series in seriesDaily.TimeSeries)
             {
                 var close = double.Parse(series.close);
                 var open = double.Parse(series.open);
@@ -33,15 +62,14 @@
                 var volume = int.Parse(series.volume);
                 var day = DateTime.Parse(series.DateTime);
 
-                var timeSeries = new TimeSeries
-                                     {
-                                         Close = close,
-                                         High = high,
-                                         Open = open,
-                                         Low = low,
-                                         Volume = volume,
-                                         Day = day
-                                     };
+                // ignore missing days or days with same value but no volume (holidays?)
+                if (((open == 0.0) && (close == 0.0) && (high == 0.0) && (low == 0.0))
+                    || ((open == close) && (high == close) && (low == close) && (volume == 0.0)))
+                {
+                    continue;
+                }
+
+                var timeSeries = new TimeSeries { Close = close, High = high, Open = open, Low = low, Volume = volume, Day = day };
                 list.Add(timeSeries);
             }
 

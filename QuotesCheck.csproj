@@ -108,6 +108,7 @@
     <Compile Include="Evaluation\PerformanceMeasure.cs" />
     <Compile Include="Evaluation\SimpleEvaluator.cs" />
     <Compile Include="Indicators.cs" />
+    <Compile Include="Indizes.cs" />
     <Compile Include="Json.cs" />
     <Compile Include="MyTextTraceListener.cs" />
     <Compile Include="Program.cs" />

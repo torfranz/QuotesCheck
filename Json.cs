@@ -1,6 +1,5 @@
 ﻿namespace QuotesCheck
 {
-    using System.Diagnostics;
     using System.IO;
 
     using Newtonsoft.Json;

@@ -12,7 +12,7 @@
             this.ISIN = symbol.ISIN;
             this.EvaluatorName = evaluator.Name;
             this.Performance = new PerformanceMeasure(this.Trades);
-            this.Paramters = parameters;
+            this.Parameters = parameters;
         }
 
         public IList<Trade> Trades { get; } = new List<Trade>();
@@ -23,7 +23,7 @@
 
         public string CompanyName { get; }
 
-        public double[] Paramters { get; }
+        public double[] Parameters { get; }
 
         public string EvaluatorName { get; }
 
@@ -35,7 +35,7 @@
         public void Save(string folder)
         {
             var now = DateTime.Now;
-            Json.Save(Path.Combine(folder, $"Evaluation-{this.ISIN}-{this.Performance.OverallGain:F0}-{now:yyyy-MM-dd-hh-mm-ss}.json"), this);
+            Json.Save(Path.Combine(folder, $"Evaluation-{this.ISIN}-{this.Performance.OverallGain:F0}%-{now:yyyy-MM-dd-hh-mm-ss}.json"), this);
         }
     }
 }

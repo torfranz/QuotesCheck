@@ -10,29 +10,26 @@
 
         public abstract (double Lower, double Upper, double Step)[] ParamterRanges { get; }
 
-        protected SymbolInformation Symbol { get; private set; }
-
         public abstract void GenerateFixtures(SymbolInformation symbol);
 
         internal EvaluationResult Evaluate(SymbolInformation symbol, double[] parameters)
         {
-            this.Symbol = symbol;
-            Debug.Assert(this.Symbol.TimeSeries.Count > 100);
+            Debug.Assert(symbol.TimeSeries.Count > 100);
 
             var trade = new Trade();
 
             var lookingForEntry = true;
             var result = new EvaluationResult(symbol, this, parameters);
 
-            for (var i = this.Symbol.TimeSeries.Count - 100; i >= 1; i--)
+            for (var i = symbol.TimeSeries.Count - 100; i >= 1; i--)
             {
                 if (lookingForEntry)
                 {
-                    lookingForEntry = !this.IsEntry(i, parameters, trade);
+                    lookingForEntry = !this.IsEntry(symbol, i, parameters, trade);
                 }
                 else
                 {
-                    lookingForEntry = this.IsExit(i, parameters, trade);
+                    lookingForEntry = this.IsExit(symbol, i, parameters, trade);
                     if (lookingForEntry)
                     {
                         result.Trades.Add(trade);
@@ -45,8 +42,8 @@
             if (!lookingForEntry)
             {
                 // last data point is always considered an exit point
-                trade.SellValue = this.Symbol.TimeSeries[0].Close;
-                trade.SellDate = this.Symbol.TimeSeries[0].Day;
+                trade.SellValue = symbol.TimeSeries[0].Close;
+                trade.SellDate = symbol.TimeSeries[0].Day;
 
                 result.Trades.Add(trade);
             }
@@ -54,8 +51,8 @@
             return result;
         }
 
-        protected abstract bool IsEntry(int index, double[] parameters, Trade trade);
+        protected abstract bool IsEntry(SymbolInformation symbol, int index, double[] parameters, Trade trade);
 
-        protected abstract bool IsExit(int index, double[] parameters, Trade trade);
+        protected abstract bool IsExit(SymbolInformation symbol, int index, double[] parameters, Trade trade);
     }
 }

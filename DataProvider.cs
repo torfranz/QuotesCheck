@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Threading;
 
     using Avapi;
     using Avapi.AvapiTIME_SERIES_DAILY;
@@ -37,18 +38,15 @@
                     {
                         seriesDaily = response.Data;
                     }
-                    else
-                    {
-                        var i = 0;
-                    }
                 }
-                catch (Exception ex)
+                catch
                 {
                     if (retry == 10)
                     {
                         throw;
                     }
 
+                    Thread.Sleep(500);
                     retry++;
                 }
             }

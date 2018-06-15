@@ -102,7 +102,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DataProvider.cs" />
+    <Compile Include="Evaluation\MetaEvaluationResult.cs" />
     <Compile Include="Evaluation\EvaluationResult.cs" />
+    <Compile Include="Evaluation\MetaOptimizer.cs" />
+    <Compile Include="Evaluation\SingleOptimizer.cs" />
     <Compile Include="Evaluation\Trade.cs" />
     <Compile Include="Evaluation\Evaluator.cs" />
     <Compile Include="Evaluation\PerformanceMeasure.cs" />

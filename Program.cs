@@ -6,8 +6,6 @@
     using System.Linq;
     using System.Threading;
 
-    using Accord.Math.Optimization;
-
     using QuotesCheck.Evaluation;
 
     internal class Program
@@ -63,32 +61,30 @@
             //var aos = Indicators.AOS(symbol, 20);
             // var md = Indicators.MD(symbol, SourceType.Close, 20); // --> not correct
 
-            Evaluator evaluator = new SimpleEvaluator();
-
             Trace.TraceInformation("Start optimization");
             Trace.Indent();
 
-            // generate fixtures
-            var sw = Stopwatch.StartNew();
-            var symbol = symbols[Indizes.DAX[0]];
-            evaluator.GenerateFixtures(symbol);
-            Trace.TraceInformation($"Generating fixtures took {sw.ElapsedMilliseconds:F0}ms for {symbol}");
+            // Single
+            var singleOptimizer = new SingleOptimizer(new SimpleEvaluator());
 
-            // start solver
-            var parameterRanges = evaluator.ParamterRanges;
-            var solver = new NelderMead(parameterRanges.Length) { Function = x => evaluator.Evaluate(symbol, x).Performance.OverallGain, };
-
-            for (var i = 0; i < parameterRanges.Length; i++)
+            foreach (var symbol in symbols.Values)
             {
-                solver.LowerBounds[i] = parameterRanges[i].Lower;
-                solver.UpperBounds[i] = parameterRanges[i].Upper;
-                solver.StepSize[i] = parameterRanges[i].Step;
+                var singleResult = singleOptimizer.Run(symbol);
+                if (singleResult != null)
+                {
+                    Trace.TraceInformation($"Optimization finished for {singleResult}");
+                    singleResult.Save("SingleBestData");
+                }
             }
 
-            // Optimize it
-            if (solver.Maximize(evaluator.StartingParamters))
+            // Multi
+            var optimizer = new MetaOptimizer(new SimpleEvaluator());
+
+            var metaResult = optimizer.Run(symbols.Values.ToArray());
+            if (metaResult != null)
             {
-                evaluator.Evaluate(symbol, solver.Solution).Save("BestData");
+                Trace.TraceInformation($"Optimization finished for {metaResult}");
+                metaResult.Save("MetaBestData");
             }
 
             Trace.Unindent();

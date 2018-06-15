@@ -2,6 +2,8 @@
 {
     using System.Collections.Generic;
     using System.Linq;
+    
+    using MathNet.Numerics.Statistics;
 
     internal class PerformanceMeasure
     {
@@ -17,6 +19,14 @@
         public int NegativeTrades => this.trades.Sum(item => item.SellValue < item.BuyValue ? 1 : 0);
 
         public double OverallGain => this.trades.Sum(item => item.Gain);
+
+        public double BestTrade => this.trades.Max(item => item.Gain);
+
+        public double WorstTrade => this.trades.Min(item => item.Gain);
+
+        public double PositiveTradeMedian => this.trades.Where(item => item.Gain > 0).Select(item => item.Gain).Median();
+
+        public double NegativeTradeMedian => this.trades.Where(item => item.Gain < 0).Select(item => item.Gain).Median();
 
         public override string ToString()
         {

@@ -6,7 +6,7 @@
 
     internal class SimpleEvaluator : Evaluator
     {
-        private Dictionary<int, double[]> emas;
+        private Dictionary<string, Dictionary<int, double[]>> emas = new Dictionary<string, Dictionary<int, double[]>>();
 
         public override string Name => "Simple Evaluator";
 
@@ -16,41 +16,43 @@
 
         public override void GenerateFixtures(SymbolInformation symbol)
         {
-            this.emas = new Dictionary<int, double[]>();
+            var emas = new Dictionary<int, double[]>();
             for (var i = 5; i <= 65; i++)
             {
-                this.emas[i] = Indicators.EMA(symbol, SourceType.Close, i);
+                emas[i] = Indicators.EMA(symbol, SourceType.Close, i);
             }
+
+            this.emas[symbol.ISIN] = emas;
         }
 
-        protected override bool IsEntry(int index, double[] parameters, Trade trade)
+        protected override bool IsEntry(SymbolInformation symbol, int index, double[] parameters, Trade trade)
         {
             Debug.Assert(parameters.Length == 4);
-            var emaFast = this.emas[Convert.ToInt32(parameters[0])];
-            var emaSlow = this.emas[Convert.ToInt32(parameters[1])];
+            var emaFast = this.emas[symbol.ISIN][Convert.ToInt32(parameters[0])];
+            var emaSlow = this.emas[symbol.ISIN][Convert.ToInt32(parameters[1])];
 
             if ((emaFast[index + 1] < emaSlow[index + 1]) && (emaFast[index] > emaSlow[index]))
             {
                 // trade at next day open
-                trade.BuyValue = this.Symbol.Open[index - 1];
-                trade.BuyDate = this.Symbol.Day[index - 1];
+                trade.BuyValue = symbol.Open[index - 1];
+                trade.BuyDate = symbol.Day[index - 1];
                 return true;
             }
 
             return false;
         }
 
-        protected override bool IsExit(int index, double[] parameters, Trade trade)
+        protected override bool IsExit(SymbolInformation symbol, int index, double[] parameters, Trade trade)
         {
             Debug.Assert(parameters.Length == 4);
-            var emaFast = this.emas[Convert.ToInt32(parameters[2])];
-            var emaSlow = this.emas[Convert.ToInt32(parameters[3])];
+            var emaFast = this.emas[symbol.ISIN][Convert.ToInt32(parameters[2])];
+            var emaSlow = this.emas[symbol.ISIN][Convert.ToInt32(parameters[3])];
 
             if ((emaFast[index + 1] > emaSlow[index + 1]) && (emaFast[index] < emaSlow[index]))
             {
                 // trade at next day open
-                trade.SellValue = this.Symbol.Open[index - 1];
-                trade.SellDate = this.Symbol.Day[index - 1];
+                trade.SellValue = symbol.Open[index - 1];
+                trade.SellDate = symbol.Day[index - 1];
                 return true;
             }
 

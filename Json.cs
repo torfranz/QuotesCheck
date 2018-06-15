@@ -6,7 +6,7 @@
 
     internal static class Json
     {
-        private static readonly JsonSerializerSettings JsonSettings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto };
+        private static readonly JsonSerializerSettings JsonSettings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto, Formatting = Formatting.Indented };
 
         public static void Save(string dataPath, object obj)
         {

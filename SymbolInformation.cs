@@ -77,7 +77,7 @@
             }
         }
 
-        public void UpdateTimeSeries()
+        public void UpdateTimeSeries(bool updateExisting = true)
         {
             // reset extracted series
             this.open = null;
@@ -91,7 +91,7 @@
             {
                 this.TimeSeries = this.dataProvider.GetTimeSeries(this);
             }
-            else
+            else if(updateExisting)
             {
                 // remove the first entry to get it always updated
                 this.TimeSeries.RemoveAt(0);

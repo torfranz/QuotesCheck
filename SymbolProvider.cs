@@ -9,13 +9,9 @@
 
     using CsvHelper;
 
-    using Newtonsoft.Json;
-
     internal class SymbolProvider
     {
         private const string Folder = @"ReferenceData";
-
-        private readonly JsonSerializerSettings jsonSettings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto };
 
         private readonly string referencePath = Path.Combine(Folder, "BXESymbols-PROD.csv");
 
@@ -25,12 +21,58 @@
 
         public SymbolProvider(bool updateFirst = false)
         {
-            if (updateFirst) this.UpdateReference();
+            if (updateFirst)
+            {
+                this.UpdateReference();
+            }
         }
+
+        private IDictionary<string, SymbolInformation> Symbols { get; } = new Dictionary<string, SymbolInformation>();
 
         private IEnumerable<SymbolInformation> EmptySymbols => this.emptySymbols ?? (this.emptySymbols = this.ReadEmptySymbols());
 
-        private IDictionary<string, SymbolInformation> Symbols { get; } = new Dictionary<string, SymbolInformation>();
+        public SymbolInformation LookUpISIN(string isin, bool updateExisting = true)
+        {
+            Trace.TraceInformation($"Lookup data for ISIN {isin}");
+            Trace.Indent();
+            try
+            {
+                isin = isin.ToUpperInvariant();
+
+                // check if we know this already
+                if (this.Symbols.ContainsKey(isin))
+                {
+                    return this.Symbols[isin];
+                }
+
+                // check if we can load a file from disk
+                var dataPath = Path.Combine(Folder, $"{isin}.json");
+                var symbol = File.Exists(dataPath) ? LoadSymbolData(isin) : this.EmptySymbols.First(item => Equals(item.ISIN.ToUpperInvariant(), isin));
+
+                symbol.UpdateTimeSeries(updateExisting);
+                SaveSymbolData(symbol);
+
+                this.Symbols.Add(isin, symbol);
+
+                return symbol;
+            }
+            finally
+            {
+                Trace.Unindent();
+            }
+        }
+
+        private static void SaveSymbolData(SymbolInformation symbol)
+        {
+            var dataPath = Path.Combine(Folder, $"{symbol.ISIN}.json");
+            Json.Save(dataPath, symbol);
+        }
+
+        private static SymbolInformation LoadSymbolData(string ISIN)
+        {
+            var dataPath = Path.Combine(Folder, $"{ISIN}.json");
+            return Json.Load<SymbolInformation>(dataPath);
+        }
 
         private void UpdateReference()
         {
@@ -53,46 +95,6 @@
                 csv.Configuration.IncludePrivateMembers = true;
                 return csv.GetRecords<SymbolInformation>().ToArray();
             }
-        }
-
-        public SymbolInformation LookUpISIN(string isin)
-        {
-            Trace.TraceInformation($"Lookup data for ISIN {isin}");
-            Trace.Indent();
-            try
-            {
-                isin = isin.ToUpperInvariant();
-
-                // check if we know this already
-                if (this.Symbols.ContainsKey(isin)) return this.Symbols[isin];
-
-                // check if we can load a file from disk
-                var dataPath = Path.Combine(Folder, $"{isin}.json");
-                var symbol = File.Exists(dataPath) ? this.LoadSymbolData(dataPath) : this.EmptySymbols.First(item => Equals(item.ISIN.ToUpperInvariant(), isin));
-
-                symbol.UpdateTimeSeries();
-                this.SaveSymbolData(dataPath, symbol);
-
-                this.Symbols.Add(isin, symbol);
-
-                return symbol;
-            }
-            finally
-            {
-                Trace.Unindent();
-            }
-        }
-
-        private void SaveSymbolData(string dataPath, SymbolInformation symbol)
-        {
-            Trace.TraceInformation($"Writing data to {dataPath}");
-            File.WriteAllText(dataPath, JsonConvert.SerializeObject(symbol, this.jsonSettings));
-        }
-
-        private SymbolInformation LoadSymbolData(string dataPath)
-        {
-            Trace.TraceInformation($"Reading data from {dataPath}");
-            return JsonConvert.DeserializeObject<SymbolInformation>(File.ReadAllText(dataPath), this.jsonSettings);
         }
     }
 }

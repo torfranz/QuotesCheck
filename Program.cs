@@ -1,11 +1,13 @@
 ﻿namespace QuotesCheck
 {
-    using QuotesCheck.Evaluation;
     using System;
-    using System.Collections.Generic;
     using System.Diagnostics;
     using System.Globalization;
     using System.Threading;
+
+    using Accord.Math.Optimization;
+
+    using QuotesCheck.Evaluation;
 
     internal class Program
     {
@@ -16,7 +18,7 @@
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
             var symbolProvider = new SymbolProvider();
-            var symbol = symbolProvider.LookUpISIN("DE000A0D9PT0");
+            var symbol = symbolProvider.LookUpISIN("DE000A0D9PT0", false);
 
             //var ema20 = Indicators.EMA(symbol, SourceType.Close, 20);
             //var dema20 = Indicators.DEMA(symbol, SourceType.Close, 20);
@@ -57,34 +59,35 @@
             //var aroonUp = Indicators.AROUp(symbol, SourceType.High, 20);
             //var aroondown = Indicators.ARODown(symbol, SourceType.Low, 20);
             //var aos = Indicators.AOS(symbol, 20);
+            // var md = Indicators.MD(symbol, SourceType.Close, 20); // --> not correct
 
-            var evaluator = new SimpleEvaluator();
-                        
+            Evaluator evaluator = new SimpleEvaluator();
+
             Trace.TraceInformation("Start optimization");
             Trace.Indent();
 
-            var best = new PerformanceMeasure(new List<Trade>());
-            int bestFast = 0, bestSlow = 0;
-            for (var fast = 5; fast < 35; fast++)
-            {
-                for (var slow = 35; slow < 65; slow++)
-                {
-                    var trades = evaluator.Evaluate(symbol, new double[] { fast, slow }, new double[] { fast, slow });
-                    var current = new PerformanceMeasure(trades);
+            // generate fixtures
+            var sw = Stopwatch.StartNew();
+            evaluator.GenerateFixtures(symbol);
+            Trace.TraceInformation($"Generating fixtures took {sw.ElapsedMilliseconds:F0}ms for {symbol}");
 
-                    if(current.OverallGain > best.OverallGain)
-                    {
-                        best = current;
-                        bestFast = fast;
-                        bestSlow = slow;
-                        Trace.TraceInformation($"New best found {best} for fast={fast}, slow={slow}");
-                    }
-                }
+            // start solver
+            var parameterRanges = evaluator.ParamterRanges;
+            var solver = new NelderMead(parameterRanges.Length) { Function = x => evaluator.Evaluate(symbol, x).Performance.OverallGain, };
+
+            for (var i = 0; i < parameterRanges.Length; i++)
+            {
+                solver.LowerBounds[i] = parameterRanges[i].Lower;
+                solver.UpperBounds[i] = parameterRanges[i].Upper;
+                solver.StepSize[i] = parameterRanges[i].Step;
+            }
+
+            // Optimize it
+            if (solver.Maximize(evaluator.StartingParamters))
+            {
+                evaluator.Evaluate(symbol, solver.Solution).Save("BestData");
             }
             
-            var md = Indicators.MD(symbol, SourceType.Close, 20); // --> not correct
-
-
             Trace.Unindent();
             Trace.TraceInformation($"Exited at {DateTime.Now}");
             Trace.TraceInformation(string.Empty);

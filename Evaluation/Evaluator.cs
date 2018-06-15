@@ -1,66 +1,61 @@
-﻿using QuotesCheck;
-using System.Collections.Generic;
-using System.Diagnostics;
-
-internal abstract class Evaluator
+﻿namespace QuotesCheck.Evaluation
 {
-    protected SymbolInformation Symbol { get; private set; }
-    protected abstract void GenerateFixtures();
-    internal IList<Trade> Evaluate(SymbolInformation symbol, double[] parametersEntry, double[] parametersExit)
+    using System.Diagnostics;
+
+    internal abstract class Evaluator
     {
-        var sw = Stopwatch.StartNew();
+        public abstract string Name { get; }
 
-        this.Symbol = symbol;
-        Debug.Assert(Symbol.TimeSeries.Count > 100);
+        public abstract double[] StartingParamters { get; }
 
-        this.GenerateFixtures();
+        public abstract (double Lower, double Upper, double Step)[] ParamterRanges { get; }
 
-        var buySellInfo = new Trade();
+        protected SymbolInformation Symbol { get; private set; }
 
-        var result = new List<Trade>();
-        for (int i = Symbol.TimeSeries.Count - 100; i >= 1 ; i--)
+        public abstract void GenerateFixtures(SymbolInformation symbol);
+
+        internal EvaluationResult Evaluate(SymbolInformation symbol, double[] parameters)
         {
-            if (buySellInfo.BuyValue == 0)
+            this.Symbol = symbol;
+            Debug.Assert(this.Symbol.TimeSeries.Count > 100);
+
+            var trade = new Trade();
+
+            var lookingForEntry = true;
+            var result = new EvaluationResult(symbol, this, parameters);
+
+            for (var i = this.Symbol.TimeSeries.Count - 100; i >= 1; i--)
             {
-                var (isEntry, value) = IsEntry(i, parametersEntry);
-                if (isEntry)
+                if (lookingForEntry)
                 {
-                    buySellInfo.BuyValue = value;
-                    buySellInfo.BuyDate = Symbol.TimeSeries[i].Day;
+                    lookingForEntry = !this.IsEntry(i, parameters, trade);
+                }
+                else
+                {
+                    lookingForEntry = this.IsExit(i, parameters, trade);
+                    if (lookingForEntry)
+                    {
+                        result.Trades.Add(trade);
+                        trade = new Trade();
+                    }
                 }
             }
-            else
-            {   
-                    var (isExit, value) = IsExit(i, parametersExit);
-                    if (isExit)
-                    {
-                        buySellInfo.SellValue = value;
-                        buySellInfo.SellDate = Symbol.TimeSeries[i].Day;
 
-                        result.Add(buySellInfo);
-                        buySellInfo = new Trade();
-                    }
-                 
+            // Trade still open? -> exit with last close
+            if (!lookingForEntry)
+            {
+                // last data point is always considered an exit point
+                trade.SellValue = this.Symbol.TimeSeries[0].Close;
+                trade.SellDate = this.Symbol.TimeSeries[0].Day;
+
+                result.Trades.Add(trade);
             }
 
-            
+            return result;
         }
 
-        // BuySell still open? -> exit with last close
-        if (buySellInfo.SellValue == 0)
-        {
-            // last data point is always considered an exit point
-            buySellInfo.SellValue = Symbol.TimeSeries[0].Close;
-            buySellInfo.SellDate = Symbol.TimeSeries[0].Day;
+        protected abstract bool IsEntry(int index, double[] parameters, Trade trade);
 
-            result.Add(buySellInfo);
-        }
-
-        Trace.TraceInformation($"Evaluation took {sw.ElapsedMilliseconds:F0}ms for {Symbol}");
-
-        return result;
+        protected abstract bool IsExit(int index, double[] parameters, Trade trade);
     }
-
-    abstract protected (bool, double) IsEntry(int index, double[] parameters);
-    abstract protected (bool, double) IsExit(int index, double[] parameters);
 }

@@ -35,7 +35,7 @@
         public void Save(string folder)
         {
             var now = DateTime.Now;
-            Json.Save(Path.Combine(folder, $"Evaluation-{this.ISIN}-{this.Performance.OverallGain:F0}%-{now:yyyy-MM-dd-hh-mm-ss}.json"), this);
+            Json.Save(Path.Combine(folder, $"Evaluation-{this.ISIN}-{this.Performance.OverallGain:F0}%-{now:yyyy-MM-dd-HH-mm-ss}.json"), this);
         }
     }
 }

@@ -12,6 +12,8 @@
             this.Results = results;
             this.Trades = this.Results.Select(item => item.Trades.ToList()).Aggregate((acc, list) => acc.Concat(list).ToList());
             this.EvaluatorName = evaluator.Name;
+            this.EvaluatorEntryDescription = evaluator.EntryDescription;
+            this.EvaluatorExitDescription = evaluator.ExitDescription;
             this.Performance = new PerformanceMeasure(this.Trades);
             this.Parameters = parameters;
         }
@@ -26,6 +28,10 @@
 
         public string EvaluatorName { get; }
 
+        public string EvaluatorEntryDescription { get; }
+
+        public string EvaluatorExitDescription { get; }
+
         public override string ToString()
         {
             return $"MetaResults - {this.Performance}";
@@ -34,7 +40,7 @@
         public void Save(string folder)
         {
             var now = DateTime.Now;
-            Json.Save(Path.Combine(folder, $"Evaluation-MetaResult-{this.Performance.OverallGain:F0}%-{now:yyyy-MM-dd-hh-mm-ss}.json"), this);
+            Json.Save(Path.Combine(folder, $"Evaluation-MetaResult-{this.Performance.OverallGain:F0}%-{now:yyyy-MM-dd-HH-mm-ss}.json"), this);
         }
     }
 }

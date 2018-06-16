@@ -5,6 +5,8 @@
     internal abstract class Evaluator
     {
         public abstract string Name { get; }
+        public abstract string EntryDescription { get; }
+        public abstract string ExitDescription { get; }
 
         public abstract double[] StartingParamters { get; }
 
@@ -20,6 +22,7 @@
 
             var lookingForEntry = true;
             var result = new EvaluationResult(symbol, this, parameters);
+            this.PrepareNewParameters(symbol, parameters);
 
             for (var i = symbol.TimeSeries.Count - 100; i >= 1; i--)
             {
@@ -50,6 +53,8 @@
 
             return result;
         }
+
+        protected abstract void PrepareNewParameters(SymbolInformation symbol, double[] parameters);
 
         protected abstract bool IsEntry(SymbolInformation symbol, int index, double[] parameters, Trade trade);
 

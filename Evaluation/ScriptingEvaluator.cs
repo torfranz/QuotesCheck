@@ -1,14 +1,15 @@
 ﻿namespace QuotesCheck.Evaluation
 {
+    using Microsoft.CodeAnalysis.CSharp.Scripting;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
 
-    internal class SimpleEvaluator : Evaluator
+    internal class ScriptingEvaluator : Evaluator
     {
         private Dictionary<string, Dictionary<int, double[]>> emas = new Dictionary<string, Dictionary<int, double[]>>();
 
-        public override string Name => "Simple Evaluator";
+        public override string Name => "Scripting Evaluator";
         public override string EntryDescription => "Simple Evaluator";
         public override string ExitDescription => "Simple Evaluator";
 
@@ -44,12 +45,27 @@
             return false;
         }
 
+        public class ScriptHost
+        {
+            public ScriptingEvaluator Evaluator { get; set; }
+            public SymbolInformation Symbol { get; set; }
+            public int Index { get; set; }
+        }
+
         protected override bool IsExit(SymbolInformation symbol, int index, double[] parameters, Trade trade)
         {
             Debug.Assert(parameters.Length == 4);
             //var emaFast = this.emas[symbol.ISIN][Convert.ToInt32(parameters[2])];
             //var emaSlow = this.emas[symbol.ISIN][Convert.ToInt32(parameters[3])];
-            
+
+            var script = @"bool IsExit(ScriptingEvaluator evaluator, SymbolInformation symbol, int index) {
+return symbol.Close[index] < evaluator.longStop[index + 1];
+}
+IsExit(Evaluator, Symbol, Index)";
+
+            //note: we block here, because we are in Main method, normally we could await as scripting APIs are async
+            var result = CSharpScript.EvaluateAsync<bool>(script, null, new ScriptHost { Symbol = symbol, Evaluator = this, Index = index }).Result;
+
             if (symbol.Close[index] < longStop[index + 1])
                 //((emaFast[index + 1] > emaSlow[index + 1]) && (emaFast[index] < emaSlow[index])))
             {

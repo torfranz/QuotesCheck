@@ -1,6 +1,7 @@
 ﻿namespace QuotesCheck.Evaluation
 {
     using System.Diagnostics;
+    using System.Threading.Tasks;
 
     internal abstract class Evaluator
     {
@@ -11,53 +12,81 @@
         public abstract double[] StartingParamters { get; }
 
         public abstract (double Lower, double Upper, double Step)[] ParamterRanges { get; }
+        public SymbolInformation Symbol { get; }
 
-        public abstract void GenerateFixtures(SymbolInformation symbol);
-
-        internal EvaluationResult Evaluate(SymbolInformation symbol, double[] parameters)
+        public Evaluator(SymbolInformation symbol)
         {
             Debug.Assert(symbol.TimeSeries.Count > 100);
+            this.Symbol = symbol;
+        }
 
-            var trade = new Trade();
+        protected abstract Trade InitiateTrade(int index);
+        protected abstract void ExitTrade(Trade trade, int index);
 
-            var lookingForEntry = true;
-            var result = new EvaluationResult(symbol, this, parameters);
-            this.PrepareNewParameters(symbol, parameters);
+        protected double[] Parameters { get; private set; }
+        internal EvaluationResult Evaluate(double[] parameters)
+        {
+            int startIndex = 1;
+            int endIndex = this.Symbol.TimeSeries.Count - 100;
 
-            for (var i = symbol.TimeSeries.Count - 100; i >= 1; i--)
+            Debug.Assert(parameters.Length == this.StartingParamters.Length);
+            this.Parameters = parameters;
+            this.PrepareForParameters();
+
+            var entries = new bool[this.Symbol.TimeSeries.Count];
+            var exits = new bool[this.Symbol.TimeSeries.Count];
+
+            //Parallel.For(startIndex, endIndex, index => {
+            //    entries[index] = IsEntry(index);
+            //    exits[index] = IsExit(index);
+            //});
+            
+            for (int index = startIndex; index < endIndex; index++)
             {
-                if (lookingForEntry)
+                entries[index] = IsEntry(index);
+                exits[index] = IsExit(index);
+            }
+            
+            Trade activeTrade = null;
+            var result = new EvaluationResult(this, parameters);
+
+            for (var index = endIndex; index >= startIndex; index--)
+            {
+                if (activeTrade == null)
                 {
-                    lookingForEntry = !this.IsEntry(symbol, i, parameters, trade);
+                    if(entries[index])
+                    {
+                        activeTrade = this.InitiateTrade( index);
+                        result.Trades.Add(activeTrade);
+                    }
                 }
                 else
                 {
-                    lookingForEntry = this.IsExit(symbol, i, parameters, trade);
-                    if (lookingForEntry)
+                    if (exits[index])
                     {
-                        result.Trades.Add(trade);
-                        trade = new Trade();
+                        // finish trade
+                        this.ExitTrade(activeTrade, index);
+                                               
+                        activeTrade = null;
                     }
                 }
             }
 
             // Trade still open? -> exit with last close
-            if (!lookingForEntry)
+            if (activeTrade != null)
             {
                 // last data point is always considered an exit point
-                trade.SellValue = symbol.TimeSeries[0].Close;
-                trade.SellDate = symbol.TimeSeries[0].Day;
-
-                result.Trades.Add(trade);
+                activeTrade.SellValue = this.Symbol.TimeSeries[0].Close;
+                activeTrade.SellDate = this.Symbol.TimeSeries[0].Day;                
             }
-
+            
             return result;
         }
 
-        protected abstract void PrepareNewParameters(SymbolInformation symbol, double[] parameters);
+        protected abstract void PrepareForParameters();
 
-        protected abstract bool IsEntry(SymbolInformation symbol, int index, double[] parameters, Trade trade);
+        protected abstract bool IsEntry(int index);
 
-        protected abstract bool IsExit(SymbolInformation symbol, int index, double[] parameters, Trade trade);
+        protected abstract bool IsExit(int index);
     }
 }

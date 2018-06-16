@@ -13,13 +13,10 @@
             this.evaluator = evaluator;
         }
 
-        internal EvaluationResult Run(SymbolInformation symbol)
+        internal EvaluationResult Run()
         {
-            // generate fixtures
-            this.evaluator.GenerateFixtures(symbol);
-
             // start solver
-            var best = new EvaluationResult(symbol, evaluator, null);
+            var best = new EvaluationResult(evaluator, null);
             var parameterRanges = this.evaluator.ParamterRanges;
 
             //Parallel.For(Convert.ToInt32(parameterRanges[0].Lower), Convert.ToInt32(parameterRanges[0].Upper), p1 =>
@@ -31,13 +28,13 @@
             //            Parallel.For(Convert.ToInt32(parameterRanges[3].Lower), Convert.ToInt32(parameterRanges[3].Upper), p4 =>
             //            {
             //                const int step = 3;
-            //                if(p1 % step != 0 || p2 % step != 0 || p3 % step != 0 || p4 % step != 0)
+            //                if (p1 % step != 0 || p2 % step != 0 || p3 % step != 0 || p4 % step != 0)
             //                {
             //                    return;
             //                }
 
-            //                var result = this.evaluator.Evaluate(symbol, new double[] { p1, p2, p3, p4 });
-            //                if(result.Performance.OverallGain > best.Performance.OverallGain)
+            //                var result = this.evaluator.Evaluate(new double[] { p1, p2, p3, p4 });
+            //                if (result.Performance.OverallGain > best.Performance.OverallGain)
             //                {
             //                    best = result;
             //                }
@@ -47,8 +44,8 @@
             //});
 
             //return best;
-            
-            var solver = new NelderMead(parameterRanges.Length) { Function = x => this.evaluator.Evaluate(symbol, x).Performance.OverallGain };
+
+            var solver = new NelderMead(parameterRanges.Length) { Function = x => this.evaluator.Evaluate(x).Performance.OverallGain };
 
             for (var i = 0; i < parameterRanges.Length; i++)
             {
@@ -60,7 +57,7 @@
             // Optimize it
             if (solver.Maximize(this.evaluator.StartingParamters))
             {
-                return this.evaluator.Evaluate(symbol, solver.Solution);
+                return this.evaluator.Evaluate(solver.Solution);
             }
             
             return null;

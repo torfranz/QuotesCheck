@@ -16,6 +16,7 @@
 
         internal MetaEvaluationResult Run(SymbolInformation[] symbols)
         {
+            /*
             // generate fixtures
             foreach (var symbol in symbols)
             {
@@ -51,7 +52,7 @@
 
                 return new MetaEvaluationResult(list.ToArray(), this.evaluator, solver.Solution);
             }
-
+            */
             return null;
         }
     }

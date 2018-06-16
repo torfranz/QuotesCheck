@@ -5,7 +5,7 @@
     using System.Globalization;
     using System.Linq;
     using System.Threading;
-
+    using System.Threading.Tasks;
     using QuotesCheck.Evaluation;
 
     internal class Program
@@ -65,27 +65,27 @@
             Trace.Indent();
 
             // Single
-            var singleOptimizer = new SingleOptimizer(new SimpleEvaluator());
-
-            foreach (var symbol in symbols.Values)
+            Parallel.ForEach(symbols.Values, symbol =>
             {
-                var singleResult = singleOptimizer.Run(symbol);
-                if (singleResult != null)
-                {
-                    Trace.TraceInformation($"Optimization finished for {singleResult}");
-                    singleResult.Save("SingleBestData");
-                }
-            }
+                var sw = Stopwatch.StartNew();
+               var singleOptimizer = new SingleOptimizer(new SimpleEvaluator(symbol));
+               var singleResult = singleOptimizer.Run();
+               if (singleResult != null)
+               {
+                   Trace.TraceInformation($"Optimization finished after {sw.ElapsedMilliseconds:F0}ms for {singleResult}");
+                   singleResult.Save("SingleBestData");
+               }
+            });
 
             // Multi
-            var optimizer = new MetaOptimizer(new SimpleEvaluator());
+            //var optimizer = new MetaOptimizer(new SimpleEvaluator());
 
-            var metaResult = optimizer.Run(symbols.Values.ToArray());
-            if (metaResult != null)
-            {
-                Trace.TraceInformation($"Optimization finished for {metaResult}");
-                metaResult.Save("MetaBestData");
-            }
+            //var metaResult = optimizer.Run(symbols.Values.ToArray());
+            //if (metaResult != null)
+            //{
+            //    Trace.TraceInformation($"Optimization finished for {metaResult}");
+            //    metaResult.Save("MetaBestData");
+            //}
 
             Trace.Unindent();
             Trace.TraceInformation($"Exited at {DateTime.Now}");

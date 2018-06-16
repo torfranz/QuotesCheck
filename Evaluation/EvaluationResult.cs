@@ -6,10 +6,10 @@
 
     internal class EvaluationResult
     {
-        public EvaluationResult(SymbolInformation symbol, Evaluator evaluator, double[] parameters)
+        public EvaluationResult(Evaluator evaluator, double[] parameters)
         {
-            this.CompanyName = symbol.CompanyName;
-            this.ISIN = symbol.ISIN;
+            this.CompanyName = evaluator.Symbol.CompanyName;
+            this.ISIN = evaluator.Symbol.ISIN;
             this.EvaluatorName = evaluator.Name;
             this.Performance = new PerformanceMeasure(this.Trades);
             this.Parameters = parameters;

@@ -20,9 +20,9 @@
 
         public double OverallGain => this.trades.Sum(item => item.Gain);
 
-        public double BestTrade => this.trades.Max(item => item.Gain);
+        public double BestTrade => this.trades.Count > 0 ? this.trades.Max(item => item.Gain) : 0;
 
-        public double WorstTrade => this.trades.Min(item => item.Gain);
+        public double WorstTrade => this.trades.Count > 0 ? this.trades.Min(item => item.Gain) : 0;
 
         public double PositiveTradeMedian => this.trades.Where(item => item.Gain > 0).Select(item => item.Gain).Median();
 

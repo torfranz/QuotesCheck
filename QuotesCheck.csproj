@@ -221,6 +221,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DataProvider.cs" />
+    <Compile Include="Evaluation\Helper.cs" />
     <Compile Include="Evaluation\IterationResult.cs" />
     <Compile Include="Evaluation\MetaEvaluationResult.cs" />
     <Compile Include="Evaluation\EvaluationResult.cs" />

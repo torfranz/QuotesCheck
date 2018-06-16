@@ -53,26 +53,36 @@
                 solver.StepSize[i] = parameterRanges[i].Step;
             }
 
-            // Optimize it (first round)
-            if(!solver.Maximize(this.evaluator.StartingParamters))
+            // result before optimization
+            var bestResult = this.evaluator.Evaluate(this.evaluator.StartingParamters);
+            //return bestResult;
+
+                        // Optimize it (first round)
+            if (!solver.Maximize(this.evaluator.StartingParamters))
             {
                 return null;
             }
 
-            var bestResult = this.evaluator.Evaluate(solver.Solution);
+            var result = this.evaluator.Evaluate(solver.Solution);
+            result.Iteration = 1;
+            result.IterationsResults = bestResult.IterationsResults;
+            result.IterationsResults.Add(result.CurrentIterationResult);
+
+            bestResult = result;
+            
 
             // reiterate with best parameters from previous iteration
             // maxiumum of 10 iterations
-            for (int iteration = 1; iteration <= 10; iteration++)
+            for (int iteration = 2; iteration <= 10; iteration++)
             {
                 // gain at least 1%
-                if (!solver.Maximize(bestResult.Parameters) || solver.Value <= 1.01 * bestResult.Performance.TotalGain)
+                if (!solver.Maximize(bestResult.Parameters) || solver.Value <= (bestResult.Performance.TotalGain > 0.0 ? 1.01 * bestResult.Performance.TotalGain : 0.99 * bestResult.Performance.TotalGain))
                 {
                     break;
                 }
 
                 
-                var result = this.evaluator.Evaluate(solver.Solution);
+                result = this.evaluator.Evaluate(solver.Solution);
                 result.Iteration = iteration;
                 result.IterationsResults = bestResult.IterationsResults;
                 result.IterationsResults.Add(result.CurrentIterationResult);

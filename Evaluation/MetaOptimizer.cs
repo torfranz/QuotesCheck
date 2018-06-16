@@ -50,7 +50,7 @@
             for (int iteration = 1; iteration <= 10; iteration++)
             {
                 // gain at least 1%
-                if (!solver.Maximize(bestResult.Parameters) || solver.Value <= 1.01 * bestResult.Performance.TotalGain)
+                if (!solver.Maximize(bestResult.Parameters) || solver.Value <= (bestResult.Performance.TotalGain > 0.0 ? 1.01 * bestResult.Performance.TotalGain : 0.99 * bestResult.Performance.TotalGain))
                 {
                     break;
                 }

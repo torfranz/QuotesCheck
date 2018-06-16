@@ -27,15 +27,17 @@
 
         public string EvaluatorName { get; }
 
+        public int Iteration { get; set; }
+
         public override string ToString()
         {
             return $"{this.ISIN} - {this.CompanyName} - {this.Performance}";
         }
 
-        public void Save(string folder)
+        public void Save(string folder, long duration)
         {
             var now = DateTime.Now;
-            Json.Save(Path.Combine(folder, $"Evaluation-{this.ISIN}-{this.Performance.OverallGain:F0}%-{now:yyyy-MM-dd-HH-mm-ss}.json"), this);
+            Json.Save(Path.Combine(folder, $"Evaluation [{this.Iteration}]-{this.ISIN}-{this.Performance.OverallGain:F0}%-{duration}ms-{now:yyyy-MM-dd-HH-mm-ss}.json"), this);
         }
     }
 }

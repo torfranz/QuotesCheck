@@ -68,24 +68,25 @@
             Parallel.ForEach(symbols.Values, symbol =>
             {
                 var sw = Stopwatch.StartNew();
-               var singleOptimizer = new SingleOptimizer(new SimpleEvaluator(symbol));
+               var singleOptimizer = new SingleNelderMeadOptimizer(new SimpleEvaluator(symbol));
                var singleResult = singleOptimizer.Run();
                if (singleResult != null)
                {
-                   Trace.TraceInformation($"Optimization finished after {sw.ElapsedMilliseconds:F0}ms for {singleResult}");
-                   singleResult.Save("SingleBestData");
+                   Trace.TraceInformation($"Optimization finished after {sw.ElapsedMilliseconds}ms for {singleResult}");
+                   singleResult.Save("SingleBestData", sw.ElapsedMilliseconds);
                }
             });
 
             // Multi
-            //var optimizer = new MetaOptimizer(new SimpleEvaluator());
-
-            //var metaResult = optimizer.Run(symbols.Values.ToArray());
-            //if (metaResult != null)
-            //{
-            //    Trace.TraceInformation($"Optimization finished for {metaResult}");
-            //    metaResult.Save("MetaBestData");
-            //}
+            var swm = Stopwatch.StartNew();
+            var optimizer = new MetaOptimizer(symbol => new SimpleEvaluator(symbol));
+            
+            var metaResult = optimizer.Run(symbols.Values.ToArray());
+            if (metaResult != null)
+            {
+                Trace.TraceInformation($"Optimization finished after {swm.ElapsedMilliseconds}ms for {metaResult}");
+                metaResult.Save("MetaBestData", swm.ElapsedMilliseconds);
+            }
 
             Trace.Unindent();
             Trace.TraceInformation($"Exited at {DateTime.Now}");

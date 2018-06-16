@@ -4,11 +4,11 @@
     using System;
     using System.Threading.Tasks;
 
-    internal class SingleOptimizer
+    internal class SingleNelderMeadOptimizer
     {
         private readonly Evaluator evaluator;
 
-        internal SingleOptimizer(Evaluator evaluator)
+        internal SingleNelderMeadOptimizer(Evaluator evaluator)
         {
             this.evaluator = evaluator;
         }
@@ -16,7 +16,6 @@
         internal EvaluationResult Run()
         {
             // start solver
-            var best = new EvaluationResult(evaluator, null);
             var parameterRanges = this.evaluator.ParamterRanges;
 
             //Parallel.For(Convert.ToInt32(parameterRanges[0].Lower), Convert.ToInt32(parameterRanges[0].Upper), p1 =>
@@ -54,13 +53,28 @@
                 solver.StepSize[i] = parameterRanges[i].Step;
             }
 
-            // Optimize it
-            if (solver.Maximize(this.evaluator.StartingParamters))
+            // Optimize it (first round)
+            if(!solver.Maximize(this.evaluator.StartingParamters))
             {
-                return this.evaluator.Evaluate(solver.Solution);
+                return null;
+            }
+
+            var bestResult = this.evaluator.Evaluate(solver.Solution);
+
+            // reiterate with best parameters from previous iteration
+            // maxiumum of 10 iterations
+            for (int iteration = 1; iteration <= 10; iteration++)
+            {
+                if (!solver.Maximize(solver.Solution) || solver.Value <= bestResult.Performance.OverallGain)
+                {
+                    break;
+                }
+
+                bestResult = this.evaluator.Evaluate(solver.Solution);
+                bestResult.Iteration = iteration;
             }
             
-            return null;
+            return bestResult;
         }
     }
 }

@@ -32,15 +32,17 @@
 
         public string EvaluatorExitDescription { get; }
 
+        public string Iteration { get; set; }
+
         public override string ToString()
         {
             return $"MetaResults - {this.Performance}";
         }
 
-        public void Save(string folder)
+        public void Save(string folder, long duration)
         {
             var now = DateTime.Now;
-            Json.Save(Path.Combine(folder, $"Evaluation-MetaResult-{this.Performance.OverallGain:F0}%-{now:yyyy-MM-dd-HH-mm-ss}.json"), this);
+            Json.Save(Path.Combine(folder, $"Evaluation [{this.Iteration}]-MetaResult-{this.Performance.OverallGain:F0}%-{duration}ms-{now:yyyy-MM-dd-HH-mm-ss}.json"), this);
         }
     }
 }

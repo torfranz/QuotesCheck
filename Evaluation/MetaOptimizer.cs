@@ -1,5 +1,6 @@
 ﻿namespace QuotesCheck.Evaluation
 {
+    using System;
     using System.Collections.Generic;
     using System.Linq;
 
@@ -7,30 +8,25 @@
 
     internal class MetaOptimizer
     {
-        private readonly Evaluator evaluator;
+        private Func<SymbolInformation, Evaluator> evaluatorCreator;
 
-        internal MetaOptimizer(Evaluator evaluator)
+        internal MetaOptimizer(Func<SymbolInformation, Evaluator> evaluatorCreator)
         {
-            this.evaluator = evaluator;
+            this.evaluatorCreator = evaluatorCreator;
         }
 
         internal MetaEvaluationResult Run(SymbolInformation[] symbols)
         {
-            /*
-            // generate fixtures
-            foreach (var symbol in symbols)
-            {
-                this.evaluator.GenerateFixtures(symbol);
-            }
-
+            var evaluators = symbols.Select(symbol => evaluatorCreator(symbol)).ToArray();
+            
             // start solver
-            var parameterRanges = this.evaluator.ParamterRanges;
+            var parameterRanges = evaluators[0].ParamterRanges;
             var solver = new NelderMead(parameterRanges.Length)
                              {
                                  Function = x =>
                                      {
-                                         return symbols.Sum(
-                                             symbol => this.evaluator.Evaluate(symbol, x).Performance.OverallGain);
+                                         return evaluators.Sum(
+                                             evaluator => evaluator.Evaluate(x).Performance.OverallGain);
                                      },
                              };
 
@@ -42,18 +38,13 @@
             }
 
             // Optimize it
-            if (solver.Maximize(this.evaluator.StartingParamters))
+            if (!solver.Maximize(evaluators[0].StartingParamters))
             {
-                var list = new List<EvaluationResult>();
-                foreach (var symbol in symbols)
-                {
-                    list.Add(this.evaluator.Evaluate(symbol, solver.Solution));
-                }
-
-                return new MetaEvaluationResult(list.ToArray(), this.evaluator, solver.Solution);
+                return null;
             }
-            */
-            return null;
+
+            var results = evaluators.Select(evaluator => evaluator.Evaluate(solver.Solution)).ToArray();
+            return new MetaEvaluationResult(results, evaluators[0], solver.Solution);
         }
     }
 }

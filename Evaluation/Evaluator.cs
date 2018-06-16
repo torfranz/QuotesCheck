@@ -36,16 +36,17 @@
             var entries = new bool[this.Symbol.TimeSeries.Count];
             var exits = new bool[this.Symbol.TimeSeries.Count];
 
-            //Parallel.For(startIndex, endIndex, index => {
-            //    entries[index] = IsEntry(index);
-            //    exits[index] = IsExit(index);
-            //});
-            
-            for (int index = startIndex; index < endIndex; index++)
+            Parallel.For(startIndex, endIndex, index =>
             {
                 entries[index] = IsEntry(index);
                 exits[index] = IsExit(index);
-            }
+            });
+
+            //for (int index = startIndex; index < endIndex; index++)
+            //{
+            //    entries[index] = IsEntry(index);
+            //    exits[index] = IsExit(index);
+            //}
             
             Trade activeTrade = null;
             var result = new EvaluationResult(this, parameters);

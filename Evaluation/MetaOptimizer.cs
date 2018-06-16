@@ -3,7 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
-
+    using System.Threading.Tasks;
     using Accord.Math.Optimization;
 
     internal class MetaOptimizer
@@ -25,8 +25,9 @@
                              {
                                  Function = x =>
                                      {
-                                         return evaluators.Sum(
-                                             evaluator => evaluator.Evaluate(x).Performance.TotalGain);
+                                         var results = new Dictionary<string, double>();
+                                         Parallel.ForEach(evaluators, evaluator => results[evaluator.Symbol.ISIN] = evaluator.Evaluate(x).Performance.TotalGain);
+                                         return results.Values.Sum();
                                      },
                              };
 

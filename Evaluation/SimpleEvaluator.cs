@@ -22,7 +22,7 @@
 
         public override double[] StartingParamters => new[] { 20, 50, 15, 2.5 };
 
-        public override (double Lower, double Upper, double Step)[] ParamterRanges => new[] { (5.0, 35.0, 10.0), (35.0, 65.0, 10.0), (5.0, 50, 5), (0.5, 5, 1.0) };
+        public override (double Lower, double Upper, double Step)[] ParamterRanges => new[] { (5.0, 35.0, 15.0), (35.0, 65.0, 15.0), (5.0, 35, 15), (0.5, 5.5, 2.5) };
 
         protected override bool IsEntry(int index)
         {

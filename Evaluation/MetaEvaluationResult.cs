@@ -7,7 +7,7 @@
 
     internal class MetaEvaluationResult
     {
-        public MetaEvaluationResult(EvaluationResult[] results, Evaluator evaluator, double[] parameters)
+        public MetaEvaluationResult(EvaluationResult[] results, Evaluator evaluator, double[] parameters, int iteration)
         {
             this.Results = results;
             this.Trades = this.Results.Select(item => item.Trades.ToList()).Aggregate((acc, list) => acc.Concat(list).ToList());
@@ -16,6 +16,8 @@
             this.EvaluatorExitDescription = evaluator.ExitDescription;
             this.Performance = new PerformanceMeasure(this.Trades);
             this.Parameters = parameters;
+            this.Iteration = iteration;
+            this.IterationsResults = new List<IterationResult> { CurrentIterationResult };
         }
 
         IList<Trade> Trades { get; }
@@ -32,7 +34,12 @@
 
         public string EvaluatorExitDescription { get; }
 
-        public string Iteration { get; set; }
+        public int Iteration { get; }
+
+        public IList<IterationResult> IterationsResults { get; set; }
+
+        public IterationResult CurrentIterationResult => new IterationResult { Iteration = this.Iteration, Parameters = (double[])this.Parameters.Clone(), Value = this.Performance.TotalGain };
+
 
         public override string ToString()
         {
@@ -42,7 +49,7 @@
         public void Save(string folder, long duration)
         {
             var now = DateTime.Now;
-            Json.Save(Path.Combine(folder, $"Evaluation [{this.Iteration}]-MetaResult-{this.Performance.OverallGain:F0}%-{duration}ms-{now:yyyy-MM-dd-HH-mm-ss}.json"), this);
+            Json.Save(Path.Combine(folder, $"Evaluation-MetaResult-{this.Performance.TotalGain:F0}% [{this.Iteration}]-{duration}ms-{now:yyyy-MM-dd-HH-mm-ss}.json"), this);
         }
     }
 }

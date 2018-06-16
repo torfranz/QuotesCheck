@@ -26,7 +26,7 @@
                                  Function = x =>
                                      {
                                          return evaluators.Sum(
-                                             evaluator => evaluator.Evaluate(x).Performance.OverallGain);
+                                             evaluator => evaluator.Evaluate(x).Performance.TotalGain);
                                      },
                              };
 
@@ -43,8 +43,27 @@
                 return null;
             }
 
-            var results = evaluators.Select(evaluator => evaluator.Evaluate(solver.Solution)).ToArray();
-            return new MetaEvaluationResult(results, evaluators[0], solver.Solution);
+            var bestResult = new MetaEvaluationResult(evaluators.Select(evaluator => evaluator.Evaluate(solver.Solution)).ToArray(), evaluators[0], solver.Solution, 0);
+            // reiterate with best parameters from previous iteration
+            // maxiumum of 10 iterations
+            for (int iteration = 1; iteration <= 10; iteration++)
+            {
+                // gain at least 1%
+                if (!solver.Maximize(bestResult.Parameters) || solver.Value <= 1.01 * bestResult.Performance.TotalGain)
+                {
+                    break;
+                }
+
+
+                var result = new MetaEvaluationResult(evaluators.Select(evaluator => evaluator.Evaluate(solver.Solution)).ToArray(), evaluators[0], solver.Solution, iteration);
+                
+                result.IterationsResults = bestResult.IterationsResults;
+                result.IterationsResults.Add(result.CurrentIterationResult);
+
+                bestResult = result;
+            }
+
+            return bestResult;
         }
     }
 }

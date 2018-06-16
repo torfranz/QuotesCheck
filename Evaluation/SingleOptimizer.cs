@@ -44,7 +44,7 @@
 
             //return best;
 
-            var solver = new NelderMead(parameterRanges.Length) { Function = x => this.evaluator.Evaluate(x).Performance.OverallGain };
+            var solver = new NelderMead(parameterRanges.Length) { Function = x => this.evaluator.Evaluate(x).Performance.TotalGain };
 
             for (var i = 0; i < parameterRanges.Length; i++)
             {
@@ -65,13 +65,19 @@
             // maxiumum of 10 iterations
             for (int iteration = 1; iteration <= 10; iteration++)
             {
-                if (!solver.Maximize(solver.Solution) || solver.Value <= bestResult.Performance.OverallGain)
+                // gain at least 1%
+                if (!solver.Maximize(bestResult.Parameters) || solver.Value <= 1.01 * bestResult.Performance.TotalGain)
                 {
                     break;
                 }
 
-                bestResult = this.evaluator.Evaluate(solver.Solution);
-                bestResult.Iteration = iteration;
+                
+                var result = this.evaluator.Evaluate(solver.Solution);
+                result.Iteration = iteration;
+                result.IterationsResults = bestResult.IterationsResults;
+                result.IterationsResults.Add(result.CurrentIterationResult);
+
+                bestResult = result;
             }
             
             return bestResult;

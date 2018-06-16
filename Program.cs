@@ -80,7 +80,7 @@
             // Multi
             var swm = Stopwatch.StartNew();
             var optimizer = new MetaOptimizer(symbol => new SimpleEvaluator(symbol));
-            
+
             var metaResult = optimizer.Run(symbols.Values.ToArray());
             if (metaResult != null)
             {

@@ -69,7 +69,7 @@
             //{
                 var sw = Stopwatch.StartNew();
                var singleOptimizer = new SingleNelderMeadOptimizer(new SimpleEvaluator(symbols["DE000BAY0017"] /*symbol*/));
-               var singleResult = singleOptimizer.Run();
+               var singleResult = singleOptimizer.Run(13.0 / 25.0); // 13€ per 2500€ 
                if (singleResult != null)
                {
                    Trace.TraceInformation($"Optimization finished after {sw.ElapsedMilliseconds}ms for {singleResult}");

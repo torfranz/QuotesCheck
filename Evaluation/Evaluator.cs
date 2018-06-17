@@ -24,7 +24,7 @@
         protected abstract void ExitTrade(Trade trade, int index);
 
         protected double[] Parameters { get; private set; }
-        internal EvaluationResult Evaluate(double[] parameters)
+        internal EvaluationResult Evaluate(double[] parameters, double costOfTrades)
         {
             int startIndex = 1;
             int endIndex = this.Symbol.TimeSeries.Count - 100;
@@ -58,6 +58,7 @@
                     if(entries[index])
                     {
                         activeTrade = this.InitiateTrade( index);
+                        activeTrade.CostOfTrades = costOfTrades;
                         result.Trades.Add(activeTrade);
                     }
                 }
@@ -68,6 +69,13 @@
                         // finish trade
                         this.ExitTrade(activeTrade, index);
                                                
+                        activeTrade = null;
+                    }
+                    else if (Helper.Delta(this.Symbol.TimeSeries[index].Close, activeTrade.BuyValue) < parameters[0])
+                    {
+                        // finish trade
+                        this.ExitTrade(activeTrade, index);
+
                         activeTrade = null;
                     }
                 }

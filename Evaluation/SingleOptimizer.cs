@@ -13,7 +13,7 @@
             this.evaluator = evaluator;
         }
 
-        internal EvaluationResult Run()
+        internal EvaluationResult Run(double costOfTrades)
         {
             // start solver
             var parameterRanges = this.evaluator.ParamterRanges;
@@ -44,7 +44,7 @@
 
             //return best;
 
-            var solver = new NelderMead(parameterRanges.Length) { Function = x => this.evaluator.Evaluate(x).Performance.TotalGain };
+            var solver = new NelderMead(parameterRanges.Length) { Function = x => this.evaluator.Evaluate(x, costOfTrades).Performance.TotalGain };
 
             for (var i = 0; i < parameterRanges.Length; i++)
             {
@@ -54,16 +54,16 @@
             }
 
             // result before optimization
-            var bestResult = this.evaluator.Evaluate(this.evaluator.StartingParamters);
+            var bestResult = this.evaluator.Evaluate(this.evaluator.StartingParamters, costOfTrades);
             //return bestResult;
 
-                        // Optimize it (first round)
+            // Optimize it (first round)
             if (!solver.Maximize(this.evaluator.StartingParamters))
             {
                 return null;
             }
 
-            var result = this.evaluator.Evaluate(solver.Solution);
+            var result = this.evaluator.Evaluate(solver.Solution, costOfTrades);
             result.Iteration = 1;
             result.IterationsResults = bestResult.IterationsResults;
             result.IterationsResults.Add(result.CurrentIterationResult);
@@ -82,7 +82,7 @@
                 }
 
                 
-                result = this.evaluator.Evaluate(solver.Solution);
+                result = this.evaluator.Evaluate(solver.Solution, costOfTrades);
                 result.Iteration = iteration;
                 result.IterationsResults = bestResult.IterationsResults;
                 result.IterationsResults.Add(result.CurrentIterationResult);

@@ -25,15 +25,14 @@
         public override string EntryDescription => "EMA[p1] breaks through EMA[p2] from below";
         public override string ExitDescription => "Close is below ELSZ[p3, p4]";
 
-        public override double[] StartingParamters => new[] { 10.0, 20, 10, 20, 30, 3 };
+        public override double[] StartingParamters => new[] { -5, 10.0, 50, 10, 20 };
 
         public override (double Lower, double Upper, double Step)[] ParamterRanges => new[] {
+            (-10.0, -1.0, 5.0), // stop-loss
             (5.0, 15.0, 10.0), // fast EMA
-            (15.0, 30.0, 10.0), // slow EMA
+            (35.0, 60.0, 15.0), // slow EMA
             (5.0, 15.0, 10.0), // exit fast EMA
             (15.0, 30.0, 10.0), // exit slow EMA
-            (15.0, 45.0, 15.0), // exit slow EMA
-            (2.0, 5.0, 2.0), // exit slow EMA
         };
 
         protected override bool IsEntry(int index)
@@ -105,7 +104,7 @@
             //}
 
             //if (this.Symbol.Close[index] < longStop[index])
-            if (((emaFastExit[index + 1] > emaSlowExit[index + 1]) && (emaFastExit[index] < emaSlowExit[index])) || (this.Symbol.Close[index] < longStop[index + 1]))
+            if (((emaFastExit[index + 1] > emaSlowExit[index + 1]) && (emaFastExit[index] < emaSlowExit[index])))
             {
                 return true;
             }
@@ -126,13 +125,13 @@
         protected override void PrepareForParameters()
         {
             //(macd, signal) = Indicators.MACD(this.Symbol, SourceType.Close, Convert.ToInt32(this.Parameters[0]), 200, 9);
-            (shortStop, longStop) = Indicators.ELSZ(this.Symbol, Convert.ToInt32(this.Parameters[4]), this.Parameters[5]);
+            //(shortStop, longStop) = Indicators.ELSZ(this.Symbol, Convert.ToInt32(this.Parameters[5]), this.Parameters[6]);
 
             //dema = this.demas[Convert.ToInt32(this.Parameters[0])];
-            emaFast = this.emas[Convert.ToInt32(this.Parameters[0])];
-            emaSlow = this.emas[Convert.ToInt32(this.Parameters[1])];
-            emaFastExit = this.emas[Convert.ToInt32(this.Parameters[2])];
-            emaSlowExit = this.emas[Convert.ToInt32(this.Parameters[3])];
+            emaFast = this.emas[Convert.ToInt32(this.Parameters[1])];
+            emaSlow = this.emas[Convert.ToInt32(this.Parameters[2])];
+            emaFastExit = this.emas[Convert.ToInt32(this.Parameters[3])];
+            emaSlowExit = this.emas[Convert.ToInt32(this.Parameters[4])];
         }
     }
 }

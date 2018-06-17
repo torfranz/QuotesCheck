@@ -6,10 +6,11 @@ namespace QuotesCheck.Evaluation
     {
         public double BuyValue { get; set; }
         public double SellValue { get; set; }
+        public double CostOfTrades { get; set; }
         public DateTime BuyDate { get; set; }
         public DateTime SellDate { get; set; }
 
-        public double Gain => this.BuyValue > 0 && this.SellValue > 0 ? (this.SellValue - this.BuyValue) / this.BuyValue * 100 : 0;
+        public double Gain => this.BuyValue > 0 && this.SellValue > 0 ? Helper.Delta(this.SellValue , this.BuyValue) - CostOfTrades : 0;
 
         public int Days => (this.SellDate - this.BuyDate).Days;
 

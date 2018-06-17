@@ -15,7 +15,7 @@
             this.evaluatorCreator = evaluatorCreator;
         }
 
-        internal MetaEvaluationResult Run(SymbolInformation[] symbols)
+        internal MetaEvaluationResult Run(SymbolInformation[] symbols, double costOfTrades)
         {
             var evaluators = symbols.Select(symbol => evaluatorCreator(symbol)).ToArray();
             
@@ -26,7 +26,7 @@
                                  Function = x =>
                                      {
                                          var results = new Dictionary<string, double>();
-                                         Parallel.ForEach(evaluators, evaluator => results[evaluator.Symbol.ISIN] = evaluator.Evaluate(x).Performance.TotalGain);
+                                         Parallel.ForEach(evaluators, evaluator => results[evaluator.Symbol.ISIN] = evaluator.Evaluate(x, costOfTrades).Performance.TotalGain);
                                          return results.Values.Sum();
                                      },
                              };
@@ -44,7 +44,7 @@
                 return null;
             }
 
-            var bestResult = new MetaEvaluationResult(evaluators.Select(evaluator => evaluator.Evaluate(solver.Solution)).ToArray(), evaluators[0], solver.Solution, 0);
+            var bestResult = new MetaEvaluationResult(evaluators.Select(evaluator => evaluator.Evaluate(solver.Solution, costOfTrades)).ToArray(), evaluators[0], solver.Solution, 0);
             // reiterate with best parameters from previous iteration
             // maxiumum of 10 iterations
             for (int iteration = 1; iteration <= 10; iteration++)
@@ -56,7 +56,7 @@
                 }
 
 
-                var result = new MetaEvaluationResult(evaluators.Select(evaluator => evaluator.Evaluate(solver.Solution)).ToArray(), evaluators[0], solver.Solution, iteration);
+                var result = new MetaEvaluationResult(evaluators.Select(evaluator => evaluator.Evaluate(solver.Solution, costOfTrades)).ToArray(), evaluators[0], solver.Solution, iteration);
                 
                 result.IterationsResults = bestResult.IterationsResults;
                 result.IterationsResults.Add(result.CurrentIterationResult);

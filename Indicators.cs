@@ -693,9 +693,11 @@
 
             var ema = Create(data.Length);
 
+            // EMA(t) = ((Close(t) – EMA(t-1)) * Ew(t)) + EMA(t-1)
             for (var index = data.Length - 1; index >= 0; index--)
             {
-                ema[index] = nn(ema.At(index + 1), data[index]) + wf * nn(data[index] - ema.At(index + 1));
+                var ema1 = nn(ema.At(index + 1), data[index]);
+                ema[index] = ((data[index] - ema1) * wf ) + ema1;
             }
 
             Debug.Assert(ema.Length == data.Length);

@@ -4,7 +4,9 @@ namespace QuotesCheck.Evaluation
 {
     public class Trade
     {
+        public int BuyIndex { get; set; }
         public double BuyValue { get; set; }
+        public int SellIndex { get; set; }
         public double SellValue { get; set; }
         public double CostOfTrades { get; set; }
         public DateTime BuyDate { get; set; }

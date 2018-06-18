@@ -55,7 +55,7 @@
 
             // result before optimization
             var bestResult = this.evaluator.Evaluate(this.evaluator.StartingParamters, costOfTrades);
-            //return bestResult;
+            return bestResult;
 
             // Optimize it (first round)
             if (!solver.Maximize(this.evaluator.StartingParamters))

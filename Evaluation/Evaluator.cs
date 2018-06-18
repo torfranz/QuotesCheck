@@ -1,6 +1,8 @@
 ﻿namespace QuotesCheck.Evaluation
 {
+    using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Linq;
     using System.Threading.Tasks;
 
     internal abstract class Evaluator
@@ -48,6 +50,17 @@
                 exits[index] = IsExit(index);
             }
 
+
+            // debug
+            var entryPoints = new List<TimeSeries>();
+            for (int i = 0; i < entries.Length; i++)
+            {
+                if (entries[i])
+                {
+                    entryPoints.Add(this.Symbol.TimeSeries[i]);
+                }
+            }
+            
             Trade activeTrade = null;
             var result = new EvaluationResult(this, parameters);
 

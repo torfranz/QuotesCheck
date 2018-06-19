@@ -18,12 +18,13 @@
         private double Evaluator(double[] parameters)
         {
             var result = this.evaluator.Evaluate(parameters, costOfTrades);
-            return result.Performance.TotalGain * (result.Performance.PositiveTrades - result.Performance.NegativeTrades);
+            return result.Performance.TotalGain;
         }
 
         internal EvaluationResult Run()
         {
-            //var best = new EvaluationResult(evaluator, evaluator.StartingParamters);
+            //var parameterRanges = evaluator.ParamterRanges;
+            //var optimalResult = new EvaluationResult(evaluator, evaluator.StartingParamters);
             //Parallel.For(Convert.ToInt32(parameterRanges[1].Lower), Convert.ToInt32(parameterRanges[1].Upper), p1 =>
             //{
             //    Parallel.For(Convert.ToInt32(parameterRanges[2].Lower), Convert.ToInt32(parameterRanges[2].Upper), p2 =>
@@ -38,17 +39,17 @@
             //                    return;
             //                }
 
-            //                var result = this.evaluator.Evaluate(new double[] { evaluator.StartingParamters[0], p1, p2, p3, p4 }, costOfTrades);
-            //                if (result.Performance.TotalGain > best.Performance.TotalGain)
+            //                var evaluatorResult = this.evaluator.Evaluate(new double[] { evaluator.StartingParamters[0], p1, p2, p3, p4 }, costOfTrades);
+            //                if (evaluatorResult.Performance.TotalGain > optimalResult.Performance.TotalGain)
             //                {
-            //                    best = result;
+            //                    optimalResult = evaluatorResult;
             //                }
             //            });
             //        });
             //    });
             //});
 
-            //return best;
+            //return optimalResult;
 
             // result before optimization
             var bestResult = this.evaluator.Evaluate(this.evaluator.StartingParamters, costOfTrades);

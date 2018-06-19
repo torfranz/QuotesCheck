@@ -48,16 +48,16 @@
 
         public override string ExitDescription => "Close is below ELSZ[p3, p4]";
 
-        public override double[] StartingParamters => new[] { -5, 20.0, 50, 20, 50, /*0.01, 0.03*/ };
+        public override double[] StartingParamters => new[] { -6, 20.0, 50, 20, 50, /*0.01, 0.03*/ };
 
         public override (double Lower, double Upper, double Step)[] ParamterRanges =>
             new[]
                 {
-                    (-5.0, -5.0, 0.0), // stop-loss
-                    (5.0, 35.0, 10.0), // fast EMA
-                    (35.0, 65.0, 10.0), // slow EMA
-                    (5.0, 35.0, 10.0), // exit fast EMA
-                    (35.0, 65.0, 10.0), // exit slow EMA
+                    (-10.0, -2.0, 0.0), // stop-loss
+                    (5.0, 35.0, 1.0), // fast EMA
+                    (35.0, 65.0, 1.0), // slow EMA
+                    (5.0, 35.0, 1.0), // exit fast EMA
+                    (35.0, 65.0, 1.0), // exit slow EMA
                     //(0.001, 0.04, 0.2), // diff
                     //(0.001, 0.04, 0.2), // diff
                 };

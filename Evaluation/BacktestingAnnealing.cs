@@ -32,7 +32,14 @@
             for (var i = 0; i < this.Array.Length; i++)
             {
                 var (lower, upper, step) = this.paramterRanges[i];
-                this.Array[i] = Math.Min(upper, Math.Max(lower, this.Array[i] + ((rnd.NextBoolean() ? 1 : -1)*this.rnd.NextDouble()) * step));
+                if(step == 0.0)
+                {
+                    continue;
+                }
+
+                var maxsteps = Convert.ToInt32((upper - lower) / step / 3);
+                this.Array[i] = Math.Min(upper, Math.Max(lower, this.Array[i] + ((rnd.NextBoolean() ? 1 : -1) * rnd.Next(0, maxsteps + 1)) * step));
+                //this.Array[i] = lower + step * rnd.Next(0, maxsteps + 1);
             }
         }
     }

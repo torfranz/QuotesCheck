@@ -65,17 +65,17 @@
             Trace.Indent();
 
             // Single
-            //Parallel.ForEach(symbols.Values, symbol =>
-            //{
+            Parallel.ForEach(symbols.Values, symbol =>
+            {
                 var sw = Stopwatch.StartNew();
-               var singleOptimizer = new SingleOptimizer(new SimpleEvaluator(symbols["DE0006047004"] /*symbol*/), 13.0 / 25.0); // 13€ per 2500€ 
+               var singleOptimizer = new SingleOptimizer(new SimpleEvaluator(/*symbols["DE0006047004"]*/ symbol), 13.0 / 25.0); // 13€ per 2500€ 
                var singleResult = singleOptimizer.Run(); 
                if (singleResult != null)
                {
                    Trace.TraceInformation($"Optimization finished after {sw.ElapsedMilliseconds}ms for {singleResult}");
                    singleResult.Save("SingleBestData", sw.ElapsedMilliseconds);
                }
-            //});
+            });
 
             // Multi
             //var swm = Stopwatch.StartNew();

@@ -41,8 +41,7 @@
             //});
 
             //return best;
-
-            var solver = new NelderMead(parameterRanges.Length) { Function = x => this.evaluator.Evaluate(x, costOfTrades).Performance.TotalGain };
+            var solver = new NelderMead(parameterRanges.Length) { Function = x => -this.evaluator.Evaluate(x, costOfTrades).Performance.TotalGain };
 
             for (var i = 0; i < parameterRanges.Length; i++)
             {
@@ -51,8 +50,17 @@
                 solver.StepSize[i] = parameterRanges[i].Step;
             }
 
+            var annealing = new BacktestingAnnealing(
+                                x => 1000 - this.evaluator.Evaluate(x, costOfTrades).Performance.TotalGain,
+                                this.evaluator.StartingParamters,
+                                this.evaluator.ParamterRanges)
+                                { Cycles = 100, StartTemperature = 1000 };
+            annealing.Anneal();
+            var bestResult = this.evaluator.Evaluate(annealing.Array, costOfTrades);
+            return bestResult;
+
             // result before optimization
-            var bestResult = this.evaluator.Evaluate(this.evaluator.StartingParamters, costOfTrades);
+            //var bestResult = this.evaluator.Evaluate(this.evaluator.StartingParamters, costOfTrades);
             //return bestResult;
 
             // Optimize it (first round)

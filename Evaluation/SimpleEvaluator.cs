@@ -48,7 +48,7 @@
 
         public override string ExitDescription => "Close is below ELSZ[p3, p4]";
 
-        public override double[] StartingParamters => new[] { -5, 20.0, 50, 20, 50, 0.01, 0.03 };
+        public override double[] StartingParamters => new[] { -5, 20.0, 50, 20, 50, /*0.01, 0.03*/ };
 
         public override (double Lower, double Upper, double Step)[] ParamterRanges =>
             new[]
@@ -58,18 +58,18 @@
                     (35.0, 60.0, 15.0), // slow EMA
                     (5.0, 35.0, 10.0), // exit fast EMA
                     (35.0, 60.0, 15.0), // exit slow EMA
-                    (0.001, 0.04, 0.2), // diff
-                    (0.001, 0.04, 0.2), // diff
+                    //(0.001, 0.04, 0.2), // diff
+                    //(0.001, 0.04, 0.2), // diff
                 };
 
         protected override bool IsEntry(int index)
         {
-            //if ((this.emaFast[index + 1] < this.emaSlow[index + 1]) && (this.emaFast[index] > this.emaSlow[index]))
-            //{
-            //    return true;
-            //}
+            if ((this.emaFast[index + 1] < this.emaSlow[index + 1]) && (this.emaFast[index] > this.emaSlow[index]))
+            {
+                return true;
+            }
 
-            //return false;
+            return false;
 
             // Check 1 - slow ema must rise
             var bSlow = Helper.Slope(this.emaSlow, index, 5);

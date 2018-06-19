@@ -1,8 +1,6 @@
 ﻿namespace QuotesCheck.Evaluation
 {
     using Accord.Math.Optimization;
-    using System;
-    using System.Threading.Tasks;
 
     internal class SingleNelderMeadOptimizer
     {
@@ -69,19 +67,20 @@
             result.IterationsResults.Add(result.CurrentIterationResult);
 
             bestResult = result;
-            
 
             // reiterate with best parameters from previous iteration
             // maxiumum of 10 iterations
-            for (int iteration = 2; iteration <= 10; iteration++)
+            for (var iteration = 2; iteration <= 10; iteration++)
             {
                 // gain at least 1%
-                if (!solver.Maximize(bestResult.Parameters) || solver.Value <= (bestResult.Performance.TotalGain > 0.0 ? 1.01 * bestResult.Performance.TotalGain : 0.99 * bestResult.Performance.TotalGain))
+                if (!solver.Maximize(bestResult.Parameters)
+                    || (solver.Value <= (bestResult.Performance.TotalGain > 0.0
+                                             ? 1.01 * bestResult.Performance.TotalGain
+                                             : 0.99 * bestResult.Performance.TotalGain)))
                 {
                     break;
                 }
 
-                
                 result = this.evaluator.Evaluate(solver.Solution, costOfTrades);
                 result.Iteration = iteration;
                 result.IterationsResults = bestResult.IterationsResults;
@@ -89,7 +88,7 @@
 
                 bestResult = result;
             }
-            
+
             return bestResult;
         }
     }

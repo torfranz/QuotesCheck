@@ -17,15 +17,13 @@
             this.Performance = new PerformanceMeasure(this.Trades);
             this.Parameters = parameters;
             this.Iteration = iteration;
-            this.IterationsResults = new List<IterationResult> { CurrentIterationResult };
+            this.IterationsResults = new List<IterationResult> { this.CurrentIterationResult };
         }
-
-        IList<Trade> Trades { get; }
 
         public PerformanceMeasure Performance { get; }
 
         public EvaluationResult[] Results { get; }
-        
+
         public double[] Parameters { get; }
 
         public string EvaluatorName { get; }
@@ -38,8 +36,10 @@
 
         public IList<IterationResult> IterationsResults { get; set; }
 
-        public IterationResult CurrentIterationResult => new IterationResult { Iteration = this.Iteration, Parameters = (double[])this.Parameters.Clone(), Value = this.Performance.TotalGain };
+        public IterationResult CurrentIterationResult =>
+            new IterationResult { Iteration = this.Iteration, Parameters = (double[])this.Parameters.Clone(), Value = this.Performance.TotalGain };
 
+        private IList<Trade> Trades { get; }
 
         public override string ToString()
         {
@@ -49,7 +49,9 @@
         public void Save(string folder, long duration)
         {
             var now = DateTime.Now;
-            Json.Save(Path.Combine(folder, $"Evaluation-MetaResult-{this.Performance.TotalGain:F0}% [{this.Iteration}]-{duration}ms-{now:yyyy-MM-dd-HH-mm-ss}.json"), this);
+            Json.Save(
+                Path.Combine(folder, $"Evaluation-MetaResult-{this.Performance.TotalGain:F0}% [{this.Iteration}]-{duration}ms-{now:yyyy-MM-dd-HH-mm-ss}.json"),
+                this);
         }
     }
 }

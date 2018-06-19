@@ -697,7 +697,7 @@
             for (var index = data.Length - 1; index >= 0; index--)
             {
                 var ema1 = nn(ema.At(index + 1), data[index]);
-                ema[index] = ((data[index] - ema1) * wf ) + ema1;
+                ema[index] = (data[index] - ema1) * wf + ema1;
             }
 
             Debug.Assert(ema.Length == data.Length);

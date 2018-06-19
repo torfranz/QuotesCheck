@@ -61,7 +61,7 @@
         /// <summary>
         ///     Der Lösungsvektor (beste Lösung).
         /// </summary>
-        public T[] Array { get; set; }
+        public T[] Array { get; protected set; }
 
         #endregion
 
@@ -89,7 +89,7 @@
             var currentEnergy = this.DetermineEnergy();
 
             // Bisher bester Zustand speichern:
-            var bestArray = this.GetArrayCopy();
+            var bestArray = (T[])this.Array.Clone();
             var bestEnergy = currentEnergy;
 
             // Erwärmen auf die Glühtemperatur:
@@ -100,7 +100,7 @@
             {
                 // Aktuellen Zustand merken (für Rücksetzung wenn dieser
                 // nicht übernommen wird):
-                var currentArray = this.GetArrayCopy();
+                var currentArray = (T[])this.Array.Clone();
 
                 // Kristalle zufällig anordnen - zu zufälligen Nachbarpunkt
                 // gehen. D.h. der aktuelle Zustand wird verändert.
@@ -114,7 +114,7 @@
                 if (newEnergy < bestEnergy)
                 {
                     bestEnergy = newEnergy;
-                    bestArray = this.GetArrayCopy();
+                    bestArray = (T[])this.Array.Clone();
                 }
 
                 // Energieänderung im Vergleich zum vorigen Zustand:
@@ -165,13 +165,6 @@
         {
             return this.StartTemperature * (1d - (double)++cycle / this.Cycles);
         }
-
-        //---------------------------------------------------------------------
-        /// <summary>
-        ///     Gibt eine Kopie des Vektors zurück.
-        /// </summary>
-        /// <returns>Kopie des Vektors.</returns>
-        protected abstract T[] GetArrayCopy();
 
         //---------------------------------------------------------------------
         /// <summary>

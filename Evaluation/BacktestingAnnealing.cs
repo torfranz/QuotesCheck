@@ -26,11 +26,6 @@
             return this.evaluatorFunction.Invoke(this.Array);
         }
 
-        protected override double[] GetArrayCopy()
-        {
-            return (double[])this.Array.Clone();
-        }
-
         protected override void Randomize()
         {
             for (var i = 0; i < this.Array.Length; i++)

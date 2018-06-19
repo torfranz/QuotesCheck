@@ -2,6 +2,8 @@
 {
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.IO;
+    using System.Linq;
 
     internal abstract class Evaluator
     {
@@ -49,6 +51,37 @@
                 exits[index] = this.IsExit(index);
             }
 
+            var result = new EvaluationResult(this, parameters);
+
+            // read ideal trades if available
+            var idealTradesPath = Path.Combine("ReferenceData", $"{this.Symbol.ISIN}-IdealTrades.json");
+            if (File.Exists(idealTradesPath))
+            {
+                foreach (var idealTrade in Json.Load<IdealTrades>(idealTradesPath).Trades)
+                {
+                    var trade = new Trade { CostOfTrades = costOfTrades, };
+                    for (var i = 0; i < this.Symbol.TimeSeries.Count; i++)
+                    {
+                        var series = this.Symbol.TimeSeries[i];
+                        if (idealTrade.BuyDate == series.Day)
+                        {
+                            trade.BuyIndex = i;
+                            trade.BuyValue = series.Open;
+                            trade.BuyDate = series.Day;
+                        }
+
+                        if (idealTrade.SellDate == series.Day)
+                        {
+                            trade.SellIndex = i;
+                            trade.SellValue = series.Open;
+                            trade.SellDate = series.Day;
+                        }
+                    }
+
+                    result.IdealTrades.Add(trade);
+                }
+            }
+
             // debug
             var entryPoints = new List<TimeSeries>();
             for (var i = 0; i < entries.Length; i++)
@@ -59,9 +92,8 @@
                 }
             }
 
+            // find trades
             Trade activeTrade = null;
-            var result = new EvaluationResult(this, parameters);
-
             for (var index = endIndex; index >= startIndex; index--)
             {
                 if (activeTrade == null)
@@ -75,14 +107,8 @@
                 }
                 else
                 {
-                    if (exits[index])
-                    {
-                        // finish trade
-                        this.ExitTrade(activeTrade, index);
-
-                        activeTrade = null;
-                    }
-                    else if (Helper.Delta(this.Symbol.TimeSeries[index].Close, activeTrade.BuyValue) < parameters[0])
+                    // finish if exit criteria met or stop loss value is triggered
+                    if (exits[index] || (Helper.Delta(this.Symbol.TimeSeries[index].Close, activeTrade.BuyValue) < parameters[0]))
                     {
                         // finish trade
                         this.ExitTrade(activeTrade, index);

@@ -9,12 +9,16 @@
 
         private readonly Dictionary<int, double[]> temas = new Dictionary<int, double[]>();
 
+        private double[] emaFast;
+
         private double[] temaFast;
 
         //double[] emaFast;
         private double[] emaSlow;
 
         private double[] temaFastExit;
+
+        private double[] emaFastExit;
 
         private double[] emaSlowExit;
 
@@ -52,13 +56,21 @@
                     (-10.0, -1.0, 5.0), // stop-loss
                     (5.0, 35.0, 15.0), // fast EMA
                     (35.0, 60.0, 15.0), // slow EMA
-                    (5.0, 15.0, 10.0), // exit fast EMA
-                    (15.0, 30.0, 10.0), // exit slow EMA
-                    (15.0, 30.0, 10.0), // diff
+                    (5.0, 35.0, 10.0), // exit fast EMA
+                    (35.0, 60.0, 15.0), // exit slow EMA
+                    (0.001, 0.04, 0.2), // diff
+                    (0.001, 0.04, 0.2), // diff
                 };
 
         protected override bool IsEntry(int index)
         {
+            //if ((this.emaFast[index + 1] < this.emaSlow[index + 1]) && (this.emaFast[index] > this.emaSlow[index]))
+            //{
+            //    return true;
+            //}
+
+            //return false;
+
             // Check 1 - slow ema must rise
             var bSlow = Helper.Slope(this.emaSlow, index, 5);
             if (bSlow < this.Parameters[5])
@@ -67,13 +79,13 @@
             }
 
             // Check 2 - 
-            var bFast = Helper.Slope(this.temaFast, index, 5);
+            var bFast = Helper.Slope(this.emaFast, index, 5);
             if (bFast < bSlow + this.Parameters[6])
             {
                 return false;
             }
 
-            var delta = Helper.Delta(this.emaSlow[index], this.temaFast[index]);
+            var delta = Helper.Delta(this.emaSlow[index], this.emaFast[index]);
             if (delta < 0)
             {
                 return false;
@@ -85,10 +97,10 @@
             //    return false;
             //}
 
-            if (this.signal[index] - this.macd[index] > 0.0)
-            {
-                //return false;
-            }
+            //if (this.signal[index] - this.macd[index] > 0.0)
+            //{
+            //    return false;
+            //}
 
             return true;
         }
@@ -109,6 +121,12 @@
 
         protected override bool IsExit(int index)
         {
+            if ((this.emaFastExit[index + 1] > this.emaSlowExit[index + 1]) && (this.emaFastExit[index] < this.emaSlowExit[index]))
+            {
+                return true;
+            }
+
+            return false;
             //double meanDelta10 = 0.0;
             //for (int i = 1; i <= 10; i++)
             //{
@@ -136,14 +154,15 @@
 
         protected override void PrepareForParameters()
         {
-            (this.macd, this.signal) = Indicators.MACD(this.Symbol, SourceType.Close, 20, 50, 9);
-            (this.shortStop, this.longStop) = Indicators.ELSZ(this.Symbol, 20, 2.5);
+            //(this.macd, this.signal) = Indicators.MACD(this.Symbol, SourceType.Close, 20, 50, 9);
+            //(this.shortStop, this.longStop) = Indicators.ELSZ(this.Symbol, 20, 2.5);
 
             this.temaFast = this.temas[Convert.ToInt32(this.Parameters[1])];
-            //emaFast = this.emas[Convert.ToInt32(this.Parameters[1])];
+            this.emaFast = this.emas[Convert.ToInt32(this.Parameters[1])];
             this.emaSlow = this.emas[Convert.ToInt32(this.Parameters[2])];
 
             this.temaFastExit = this.temas[Convert.ToInt32(this.Parameters[3])];
+            this.emaFastExit = this.temas[Convert.ToInt32(this.Parameters[3])];
             this.emaSlowExit = this.emas[Convert.ToInt32(this.Parameters[4])];
         }
     }

@@ -238,6 +238,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SourceType.cs" />
+    <Compile Include="IdealTrades.cs" />
     <Compile Include="TimeSeries.cs" />
     <Compile Include="SymbolInformation.cs" />
     <Compile Include="SymbolProvider.cs" />
@@ -275,6 +276,7 @@
     <None Include="ReferenceData\DE0005810055.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="ReferenceData\DE0006047004-IdealTrades.json" />
     <None Include="ReferenceData\DE0006047004.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

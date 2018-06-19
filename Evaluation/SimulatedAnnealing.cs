@@ -111,14 +111,14 @@
 
                 // Hat sich ein neuer bester Zustand eingestellt?
                 // Wenn ja diesen übernehmen:
-                if (newEnergy < bestEnergy)
+                if (newEnergy > bestEnergy)
                 {
                     bestEnergy = newEnergy;
                     bestArray = (T[])this.Array.Clone();
                 }
 
                 // Energieänderung im Vergleich zum vorigen Zustand:
-                var deltaEnergy = newEnergy - currentEnergy;
+                var deltaEnergy = currentEnergy - newEnergy;
 
                 // Wahrscheinlichkeit der Übernahme des neuen Zustands.
                 // Je höher die Temperatur desto wahrscheinlicher und

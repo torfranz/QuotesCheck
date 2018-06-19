@@ -51,10 +51,15 @@
             }
 
             var annealing = new BacktestingAnnealing(
-                                x => 1000 - this.evaluator.Evaluate(x, costOfTrades).Performance.TotalGain,
+                                //x => this.evaluator.Evaluate(x, costOfTrades).Performance.TotalGain,
+                                x =>
+                                    {
+                                        var evaluationResult = this.evaluator.Evaluate(x, costOfTrades);
+                                        return evaluationResult.Performance.PositiveTrades - evaluationResult.Performance.NegativeTrades;
+                                    },
                                 this.evaluator.StartingParamters,
                                 this.evaluator.ParamterRanges)
-                                { Cycles = 100, StartTemperature = 1000 };
+                                { Cycles = 1000, StartTemperature = 1000 };
             annealing.Anneal();
             var bestResult = this.evaluator.Evaluate(annealing.Array, costOfTrades);
             return bestResult;

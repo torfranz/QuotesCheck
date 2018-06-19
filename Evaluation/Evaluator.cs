@@ -126,7 +126,6 @@
                 activeTrade.SellDate = this.Symbol.TimeSeries[0].Day;
             }
 
-            result.IterationsResults.Add(result.CurrentIterationResult);
             return result;
         }
 

@@ -14,7 +14,7 @@
         /// <summary>
         ///     Zufallsgenerator.
         /// </summary>
-        protected Random rnd = new Random(12345);
+        protected Random rnd = new Random();
 
         #endregion
 

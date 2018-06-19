@@ -50,7 +50,7 @@
         {
             var now = DateTime.Now;
             Json.Save(
-                Path.Combine(folder, $"Evaluation-MetaResult-{this.Performance.TotalGain:F0}% [{this.Iteration}]-{duration}ms-{now:yyyy-MM-dd-HH-mm-ss}.json"),
+                Path.Combine(folder, $"Evaluation-MetaResult--[{this.Iteration}]-[{this.Performance.TotalGain:F0}% +{this.Performance.PositiveTrades} -{this.Performance.NegativeTrades}]-{duration}ms-{now:yyyy-MM-dd-HH-mm-ss}.json"),
                 this);
         }
     }

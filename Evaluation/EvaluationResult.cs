@@ -1,5 +1,6 @@
 ﻿namespace QuotesCheck.Evaluation
 {
+    using Newtonsoft.Json;
     using System;
     using System.Collections.Generic;
     using System.IO;
@@ -34,8 +35,10 @@
 
         public string EvaluatorName { get; }
 
+        [JsonIgnore]
         public int Iteration { get; set; }
 
+        [JsonIgnore]
         public IterationResult CurrentIterationResult =>
             new IterationResult { Iteration = this.Iteration, Parameters = (double[])this.Parameters.Clone(), Value = this.Performance.TotalGain };
 
@@ -50,7 +53,7 @@
             Json.Save(
                 Path.Combine(
                     folder,
-                    $"Evaluation-{this.ISIN}-{this.Performance.TotalGain:F0}% [{this.Iteration}, -{this.Performance.NegativeTrades} +{this.Performance.PositiveTrades}]-{duration}ms-{now:yyyy-MM-dd-HH-mm-ss}.json"),
+                    $"Evaluation-{this.ISIN}-[{this.Iteration}]-[{this.Performance.TotalGain:F0}% +{this.Performance.PositiveTrades} -{this.Performance.NegativeTrades}]-{duration}ms-{now:yyyy-MM-dd-HH-mm-ss}.json"),
                 this);
         }
     }

@@ -1,37 +1,45 @@
 ﻿namespace QuotesCheck.Evaluation
 {
     using Accord.Math.Optimization;
+    using System;
+    using System.Threading.Tasks;
 
-    internal class SingleNelderMeadOptimizer
+    internal class SingleOptimizer
     {
         private readonly Evaluator evaluator;
+        private double costOfTrades;
 
-        internal SingleNelderMeadOptimizer(Evaluator evaluator)
+        internal SingleOptimizer(Evaluator evaluator, double costOfTrades)
         {
             this.evaluator = evaluator;
+            this.costOfTrades = costOfTrades;
         }
 
-        internal EvaluationResult Run(double costOfTrades)
+        private double Evaluator(double[] parameters)
         {
-            // start solver
-            var parameterRanges = this.evaluator.ParamterRanges;
+            var result = this.evaluator.Evaluate(parameters, costOfTrades);
+            return result.Performance.TotalGain * (result.Performance.PositiveTrades - result.Performance.NegativeTrades);
+        }
 
-            //Parallel.For(Convert.ToInt32(parameterRanges[0].Lower), Convert.ToInt32(parameterRanges[0].Upper), p1 =>
+        internal EvaluationResult Run()
+        {
+            //var best = new EvaluationResult(evaluator, evaluator.StartingParamters);
+            //Parallel.For(Convert.ToInt32(parameterRanges[1].Lower), Convert.ToInt32(parameterRanges[1].Upper), p1 =>
             //{
-            //    Parallel.For(Convert.ToInt32(parameterRanges[1].Lower), Convert.ToInt32(parameterRanges[1].Upper), p2 =>
+            //    Parallel.For(Convert.ToInt32(parameterRanges[2].Lower), Convert.ToInt32(parameterRanges[2].Upper), p2 =>
             //    {
-            //        Parallel.For(Convert.ToInt32(parameterRanges[2].Lower), Convert.ToInt32(parameterRanges[2].Upper), p3 =>
+            //        Parallel.For(Convert.ToInt32(parameterRanges[3].Lower), Convert.ToInt32(parameterRanges[3].Upper), p3 =>
             //        {
-            //            Parallel.For(Convert.ToInt32(parameterRanges[3].Lower), Convert.ToInt32(parameterRanges[3].Upper), p4 =>
+            //            Parallel.For(Convert.ToInt32(parameterRanges[4].Lower), Convert.ToInt32(parameterRanges[4].Upper), p4 =>
             //            {
-            //                const int step = 3;
+            //                const int step = 1;
             //                if (p1 % step != 0 || p2 % step != 0 || p3 % step != 0 || p4 % step != 0)
             //                {
             //                    return;
             //                }
 
-            //                var result = this.evaluator.Evaluate(new double[] { p1, p2, p3, p4 });
-            //                if (result.Performance.OverallGain > best.Performance.OverallGain)
+            //                var result = this.evaluator.Evaluate(new double[] { evaluator.StartingParamters[0], p1, p2, p3, p4 }, costOfTrades);
+            //                if (result.Performance.TotalGain > best.Performance.TotalGain)
             //                {
             //                    best = result;
             //                }
@@ -41,40 +49,18 @@
             //});
 
             //return best;
-            var solver = new NelderMead(parameterRanges.Length) { Function = x => -this.evaluator.Evaluate(x, costOfTrades).Performance.TotalGain };
-
-            for (var i = 0; i < parameterRanges.Length; i++)
-            {
-                solver.LowerBounds[i] = parameterRanges[i].Lower;
-                solver.UpperBounds[i] = parameterRanges[i].Upper;
-                solver.StepSize[i] = parameterRanges[i].Step;
-            }
-
-            var annealing = new BacktestingAnnealing(
-                                //x => this.evaluator.Evaluate(x, costOfTrades).Performance.TotalGain,
-                                x =>
-                                    {
-                                        var evaluationResult = this.evaluator.Evaluate(x, costOfTrades);
-                                        return evaluationResult.Performance.PositiveTrades - evaluationResult.Performance.NegativeTrades;
-                                    },
-                                this.evaluator.StartingParamters,
-                                this.evaluator.ParamterRanges)
-                                { Cycles = 1000, StartTemperature = 1000 };
-            annealing.Anneal();
-            var bestResult = this.evaluator.Evaluate(annealing.Array, costOfTrades);
-            return bestResult;
 
             // result before optimization
-            //var bestResult = this.evaluator.Evaluate(this.evaluator.StartingParamters, costOfTrades);
-            //return bestResult;
+            var bestResult = this.evaluator.Evaluate(this.evaluator.StartingParamters, costOfTrades);
 
             // Optimize it (first round)
-            if (!solver.Maximize(this.evaluator.StartingParamters))
-            {
-                return null;
-            }
-
-            var result = this.evaluator.Evaluate(solver.Solution, costOfTrades);
+            var annealing = new BacktestingAnnealing(
+                                x => Evaluator(x),
+                                this.evaluator.StartingParamters,
+                                this.evaluator.ParamterRanges)
+                                { Cycles = 10000, StartTemperature = 1000 };
+            annealing.Anneal();
+            var result = this.evaluator.Evaluate(annealing.Array, costOfTrades);
             result.Iteration = 1;
             result.IterationsResults = bestResult.IterationsResults;
             result.IterationsResults.Add(result.CurrentIterationResult);
@@ -85,16 +71,23 @@
             // maxiumum of 10 iterations
             for (var iteration = 2; iteration <= 10; iteration++)
             {
+                annealing = new BacktestingAnnealing(
+                                x => Evaluator(x),
+                                bestResult.Parameters,
+                                this.evaluator.ParamterRanges)
+                { Cycles = 10000, StartTemperature = 1000 };
+                annealing.Anneal();
+
                 // gain at least 1%
-                if (!solver.Maximize(bestResult.Parameters)
-                    || (solver.Value <= (bestResult.Performance.TotalGain > 0.0
-                                             ? 1.01 * bestResult.Performance.TotalGain
-                                             : 0.99 * bestResult.Performance.TotalGain)))
+                var best = Evaluator(bestResult.Parameters);
+                if (annealing.Energy <= (best > 0.0
+                                             ? 1.01 * best
+                                             : 0.99 * best))
                 {
                     break;
                 }
 
-                result = this.evaluator.Evaluate(solver.Solution, costOfTrades);
+                result = this.evaluator.Evaluate(annealing.Array, costOfTrades);
                 result.Iteration = iteration;
                 result.IterationsResults = bestResult.IterationsResults;
                 result.IterationsResults.Add(result.CurrentIterationResult);
@@ -103,6 +96,7 @@
             }
 
             return bestResult;
+            
         }
     }
 }

@@ -53,11 +53,11 @@
         public override (double Lower, double Upper, double Step)[] ParamterRanges =>
             new[]
                 {
-                    (-10.0, -1.0, 5.0), // stop-loss
-                    (5.0, 35.0, 15.0), // fast EMA
-                    (35.0, 60.0, 15.0), // slow EMA
+                    (-5.0, -5.0, 0.0), // stop-loss
+                    (5.0, 35.0, 10.0), // fast EMA
+                    (35.0, 65.0, 10.0), // slow EMA
                     (5.0, 35.0, 10.0), // exit fast EMA
-                    (35.0, 60.0, 15.0), // exit slow EMA
+                    (35.0, 65.0, 10.0), // exit slow EMA
                     //(0.001, 0.04, 0.2), // diff
                     //(0.001, 0.04, 0.2), // diff
                 };

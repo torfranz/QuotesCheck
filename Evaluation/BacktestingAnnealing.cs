@@ -3,6 +3,7 @@
     using System;
 
     using Accord.Diagnostics;
+    using MathNet.Numerics.Random;
 
     internal class BacktestingAnnealing : SimulatedAnnealing<double>
     {
@@ -18,7 +19,7 @@
             Debug.Assert(startingParameters.Length == paramterRanges.Length);
             this.evaluatorFunction = evaluatorFunction;
             this.paramterRanges = paramterRanges;
-            this.Array = startingParameters;
+            this.Array = (double[])startingParameters.Clone();
         }
 
         public override double DetermineEnergy()
@@ -31,7 +32,7 @@
             for (var i = 0; i < this.Array.Length; i++)
             {
                 var (lower, upper, step) = this.paramterRanges[i];
-                this.Array[i] = Math.Min(upper, Math.Max(lower, this.Array[i] + (0.5 - this.rnd.NextDouble()) * step));
+                this.Array[i] = Math.Min(upper, Math.Max(lower, this.Array[i] + ((rnd.NextBoolean() ? 1 : -1)*this.rnd.NextDouble()) * step));
             }
         }
     }

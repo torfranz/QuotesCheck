@@ -1,9 +1,9 @@
 ﻿namespace QuotesCheck.Evaluation
 {
+    using System;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
-    using System.Linq;
 
     internal abstract class Evaluator
     {
@@ -78,6 +78,7 @@
                         }
                     }
 
+                    this.SetHighestValueForTrade(trade);
                     result.IdealTrades.Add(trade);
                 }
             }
@@ -94,6 +95,7 @@
 
             // find trades
             Trade activeTrade = null;
+            double highestClose = 0;
             for (var index = endIndex; index >= startIndex; index--)
             {
                 if (activeTrade == null)
@@ -103,17 +105,28 @@
                         activeTrade = this.InitiateTrade(index);
                         activeTrade.CostOfTrades = costOfTrades;
                         result.Trades.Add(activeTrade);
+
+                        // 
+                        highestClose = this.Symbol.Close[activeTrade.BuyIndex];
                     }
                 }
                 else
                 {
                     // finish if exit criteria met or stop loss value is triggered
-                    if (exits[index] || (Helper.Delta(this.Symbol.TimeSeries[index].Close, activeTrade.BuyValue) < parameters[0]))
+                    if (exits[index] || 
+                        (Helper.Delta(this.Symbol.TimeSeries[index].Close, highestClose) < parameters[0]))
                     {
                         // finish trade
                         this.ExitTrade(activeTrade, index);
+                        this.SetHighestValueForTrade(activeTrade);
 
                         activeTrade = null;
+                        highestClose = 0;
+                    }
+                    else
+                    {
+                        // track highest close since buy to apply trailing stop-loss
+                        highestClose = Math.Max(highestClose, this.Symbol.Close[index]);
                     }
                 }
             }
@@ -122,8 +135,10 @@
             if (activeTrade != null)
             {
                 // last data point is always considered an exit point
+                activeTrade.SellIndex = 0;
                 activeTrade.SellValue = this.Symbol.TimeSeries[0].Close;
                 activeTrade.SellDate = this.Symbol.TimeSeries[0].Day;
+                this.SetHighestValueForTrade(activeTrade);
             }
 
             return result;
@@ -138,5 +153,16 @@
         protected abstract bool IsEntry(int index);
 
         protected abstract bool IsExit(int index);
+
+        private void SetHighestValueForTrade(Trade trade)
+        {
+            double max = 0;
+            for (var i = trade.SellIndex; i < trade.BuyIndex; i++)
+            {
+                max = Math.Max(max, this.Symbol.Open[i]);
+            }
+
+            trade.HighestValue = max;
+        }
     }
 }

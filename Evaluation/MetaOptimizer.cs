@@ -5,13 +5,11 @@
     using System.Linq;
     using System.Threading.Tasks;
 
-    using Accord.Math.Optimization;
-
     internal class MetaOptimizer
     {
         private readonly Func<SymbolInformation, Evaluator> evaluatorCreator;
 
-        double costOfTrades;
+        private readonly double costOfTrades;
 
         internal MetaOptimizer(Func<SymbolInformation, Evaluator> evaluatorCreator, double costOfTrades)
         {
@@ -19,30 +17,20 @@
             this.costOfTrades = costOfTrades;
         }
 
-        private double Evaluator(Evaluator[] evaluators, double[] parameters)
-        {
-            var results = new Dictionary<string, double>();
-            Parallel.ForEach(
-                evaluators,
-                evaluator => results[evaluator.Symbol.ISIN] =
-                                 evaluator.Evaluate(parameters, costOfTrades).Performance.TotalGain);
-            return results.Values.Sum();
-        }
-
         internal MetaEvaluationResult Run(SymbolInformation[] symbols)
         {
             var evaluators = symbols.Select(symbol => this.evaluatorCreator(symbol)).ToArray();
 
             // start solver
-            var annealing = new BacktestingAnnealing(
-                                x => Evaluator(evaluators, x),
-                                evaluators[0].StartingParamters,
-                                evaluators[0].ParamterRanges)
-            { Cycles = 10000, StartTemperature = 1000 };
+            var annealing =
+                new BacktestingAnnealing(
+                    x => this.Evaluator(evaluators, x),
+                    evaluators[0].StartingParamters,
+                    evaluators[0].ParamterRanges) { Cycles = 10000, StartTemperature = 1000 };
             annealing.Anneal();
 
             var bestResult = new MetaEvaluationResult(
-                evaluators.Select(evaluator => evaluator.Evaluate(annealing.Array, costOfTrades)).ToArray(),
+                evaluators.Select(evaluator => evaluator.Evaluate(annealing.Array, this.costOfTrades)).ToArray(),
                 evaluators[0],
                 annealing.Array,
                 0);
@@ -51,11 +39,11 @@
             // maxiumum of 10 iterations
             for (var iteration = 1; iteration <= 10; iteration++)
             {
-                annealing = new BacktestingAnnealing(
-                                x => Evaluator(evaluators, x),
-                                evaluators[0].StartingParamters,
-                                evaluators[0].ParamterRanges)
-                { Cycles = 10000, StartTemperature = 1000 };
+                annealing =
+                    new BacktestingAnnealing(
+                        x => this.Evaluator(evaluators, x),
+                        evaluators[0].StartingParamters,
+                        evaluators[0].ParamterRanges) { Cycles = 10000, StartTemperature = 1000 };
                 annealing.Anneal();
 
                 // gain at least 1%
@@ -67,7 +55,7 @@
                 }
 
                 var result = new MetaEvaluationResult(
-                    evaluators.Select(evaluator => evaluator.Evaluate(annealing.Array, costOfTrades)).ToArray(),
+                    evaluators.Select(evaluator => evaluator.Evaluate(annealing.Array, this.costOfTrades)).ToArray(),
                     evaluators[0],
                     annealing.Array,
                     iteration);
@@ -79,6 +67,13 @@
             }
 
             return bestResult;
+        }
+
+        private double Evaluator(Evaluator[] evaluators, double[] parameters)
+        {
+            var results = new Dictionary<string, double>();
+            Parallel.ForEach(evaluators, evaluator => results[evaluator.Symbol.ISIN] = evaluator.Evaluate(parameters, this.costOfTrades).Performance.TotalGain);
+            return results.Values.Sum();
         }
     }
 }

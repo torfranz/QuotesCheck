@@ -9,12 +9,14 @@
 
         private readonly Dictionary<int, double[]> temas = new Dictionary<int, double[]>();
 
-        private double[] emaFast;
+        private readonly Dictionary<int, double[]> demas = new Dictionary<int, double[]>();
+
+        private double[] emaFastEntry;
 
         private double[] temaFast;
 
-        //double[] emaFast;
-        private double[] emaSlow;
+        //double[] emaFastEntry;
+        private double[] emaSlowEntry;
 
         private double[] temaFastExit;
 
@@ -36,6 +38,7 @@
             for (var i = 5; i <= 65; i++)
             {
                 this.emas[i] = Indicators.EMA(symbol, SourceType.Close, i);
+                this.demas[i] = Indicators.DEMA(symbol, SourceType.Close, i);
                 this.temas[i] = Indicators.TEMA(symbol, SourceType.Close, i);
             }
 
@@ -46,25 +49,25 @@
 
         public override string EntryDescription => "EMA[p1] breaks through EMA[p2] from below";
 
-        public override string ExitDescription => "Close is below ELSZ[p3, p4]";
+        public override string ExitDescription => "EMA[p3] breaks through EMA[p4] from above or trailing stop loss p[0] is triggered";
 
         public override double[] StartingParamters => new[] { -6, 20.0, 50, 20, 50, /*0.01, 0.03*/ };
 
         public override (double Lower, double Upper, double Step)[] ParamterRanges =>
             new[]
                 {
-                    (-10.0, -2.0, 0.0), // stop-loss
+                    (-15.0, -5.0, 1.0), // stop-loss
                     (5.0, 35.0, 1.0), // fast EMA
-                    (35.0, 65.0, 1.0), // slow EMA
+                    (36.0, 65.0, 1.0), // slow EMA
                     (5.0, 35.0, 1.0), // exit fast EMA
-                    (35.0, 65.0, 1.0), // exit slow EMA
+                    (36.0, 65.0, 1.0), // exit slow EMA
                     //(0.001, 0.04, 0.2), // diff
                     //(0.001, 0.04, 0.2), // diff
                 };
 
         protected override bool IsEntry(int index)
         {
-            if ((this.emaFast[index + 1] < this.emaSlow[index + 1]) && (this.emaFast[index] > this.emaSlow[index]))
+            if ((this.emaFastEntry[index + 1] < this.emaSlowEntry[index + 1]) && (this.emaFastEntry[index] > this.emaSlowEntry[index]))
             {
                 return true;
             }
@@ -72,20 +75,20 @@
             return false;
 
             // Check 1 - slow ema must rise
-            var bSlow = Helper.Slope(this.emaSlow, index, 5);
+            var bSlow = Helper.Slope(this.emaSlowEntry, index, 5);
             if (bSlow < this.Parameters[5])
             {
                 return false;
             }
 
             // Check 2 - 
-            var bFast = Helper.Slope(this.emaFast, index, 5);
+            var bFast = Helper.Slope(this.emaFastEntry, index, 5);
             if (bFast < bSlow + this.Parameters[6])
             {
                 return false;
             }
 
-            var delta = Helper.Delta(this.emaSlow[index], this.emaFast[index]);
+            var delta = Helper.Delta(this.emaSlowEntry[index], this.emaFastEntry[index]);
             if (delta < 0)
             {
                 return false;
@@ -157,12 +160,10 @@
             //(this.macd, this.signal) = Indicators.MACD(this.Symbol, SourceType.Close, 20, 50, 9);
             //(this.shortStop, this.longStop) = Indicators.ELSZ(this.Symbol, 20, 2.5);
 
-            this.temaFast = this.temas[Convert.ToInt32(this.Parameters[1])];
-            this.emaFast = this.emas[Convert.ToInt32(this.Parameters[1])];
-            this.emaSlow = this.emas[Convert.ToInt32(this.Parameters[2])];
+            this.emaFastEntry = this.emas[Convert.ToInt32(this.Parameters[1])];
+            this.emaSlowEntry = this.emas[Convert.ToInt32(this.Parameters[2])];
 
-            this.temaFastExit = this.temas[Convert.ToInt32(this.Parameters[3])];
-            this.emaFastExit = this.temas[Convert.ToInt32(this.Parameters[3])];
+            this.emaFastExit = this.emas[Convert.ToInt32(this.Parameters[3])];
             this.emaSlowExit = this.emas[Convert.ToInt32(this.Parameters[4])];
         }
     }

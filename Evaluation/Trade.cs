@@ -12,6 +12,8 @@
 
         public double SellValue { get; set; }
 
+        public double HighestValue { get; set; }
+
         public double CostOfTrades { get; set; }
 
         public DateTime BuyDate { get; set; }
@@ -19,6 +21,8 @@
         public DateTime SellDate { get; set; }
 
         public double Gain => (this.BuyValue > 0) && (this.SellValue > 0) ? Helper.Delta(this.SellValue, this.BuyValue) - this.CostOfTrades : 0;
+
+        public double PossibleGain => (this.HighestValue > 0) && (this.BuyValue > 0) ? Helper.Delta(this.HighestValue, this.BuyValue) - this.CostOfTrades : 0;
 
         public int Days => (this.SellDate - this.BuyDate).Days;
 

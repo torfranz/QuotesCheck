@@ -37,7 +37,7 @@
         public IList<IterationResult> IterationsResults { get; set; }
 
         public IterationResult CurrentIterationResult =>
-            new IterationResult { Iteration = this.Iteration, Parameters = (double[])this.Parameters.Clone(), Value = this.Performance.TotalGain };
+            new IterationResult { Iteration = this.Iteration, Parameters = (double[])this.Parameters.Clone(), Gain = this.Performance.TotalGain };
 
         private IList<Trade> Trades { get; }
 
@@ -50,7 +50,7 @@
         {
             var now = DateTime.Now;
             Json.Save(
-                Path.Combine(folder, $"Evaluation-MetaResult--[{this.Iteration}]-[{this.Performance.TotalGain:F0}% +{this.Performance.PositiveTrades} -{this.Performance.NegativeTrades}]-{duration}ms-{now:yyyy-MM-dd-HH-mm-ss}.json"),
+                Path.Combine(folder, $"Evaluation-MetaResult-[{this.Iteration}]-[{this.Performance.TotalGain:F0}% +{this.Performance.PositiveTrades} -{this.Performance.NegativeTrades}]-{duration}ms-{now:yyyy-MM-dd-HH-mm-ss}.json"),
                 this);
         }
     }

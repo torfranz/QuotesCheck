@@ -1,6 +1,7 @@
 ﻿namespace QuotesCheck.Evaluation
 {
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
@@ -71,7 +72,7 @@
 
         private double Evaluator(Evaluator[] evaluators, double[] parameters)
         {
-            var results = new Dictionary<string, double>();
+            var results = new ConcurrentDictionary<string, double>();
             Parallel.ForEach(evaluators, evaluator => results[evaluator.Symbol.ISIN] = evaluator.Evaluate(parameters, this.costOfTrades).Performance.TotalGain);
             return results.Values.Sum();
         }

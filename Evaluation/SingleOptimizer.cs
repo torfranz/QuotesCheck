@@ -1,7 +1,5 @@
 ﻿namespace QuotesCheck.Evaluation
 {
-    using System;
-
     internal class SingleOptimizer
     {
         private readonly Evaluator evaluator;
@@ -55,11 +53,7 @@
             for (var iteration = 2; iteration <= 10; iteration++)
             {
                 annealing =
-                    new BacktestingAnnealing(this.Evaluator, bestResult.Parameters, this.evaluator.ParamterRanges)
-                        {
-                            Cycles = 10000,
-                            StartTemperature = 1000
-                        };
+                    new BacktestingAnnealing(this.Evaluator, bestResult.Parameters, this.evaluator.ParamterRanges) { Cycles = 10000, StartTemperature = 1000 };
                 annealing.Anneal();
 
                 // gain at least 1%
@@ -83,7 +77,17 @@
         private double Evaluator(double[] parameters)
         {
             var result = this.evaluator.Evaluate(parameters, this.costOfTrades);
-            return result.Performance.TotalGain * result.Performance.PositiveTrades / (result.Performance.PositiveTrades + result.Performance.NegativeTrades);
+            var totalGain = result.Performance.TotalGain;
+
+            return totalGain;
+
+            /*
+            return totalGain > 0
+                       ? result.Performance.TotalGain * result.Performance.PositiveTrades
+                         / (result.Performance.PositiveTrades + result.Performance.NegativeTrades)
+                       : result.Performance.TotalGain * result.Performance.NegativeTrades
+                         / (result.Performance.PositiveTrades + result.Performance.NegativeTrades);
+                         */
         }
     }
 }

@@ -221,6 +221,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DataProvider.cs" />
+    <Compile Include="DateJsonConverter.cs" />
+    <Compile Include="DoubleJsonConverter.cs" />
     <Compile Include="Evaluation\BacktestingAnnealing.cs" />
     <Compile Include="Evaluation\Helper.cs" />
     <Compile Include="Evaluation\IterationResult.cs" />

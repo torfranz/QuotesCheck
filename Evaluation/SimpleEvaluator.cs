@@ -11,6 +11,8 @@
 
         private readonly Dictionary<int, double[]> demas = new Dictionary<int, double[]>();
 
+        private readonly Dictionary<int, double[]> smas = new Dictionary<int, double[]>();
+
         private double[] emaFastEntry;
 
         private double[] temaFast;
@@ -35,11 +37,12 @@
         public SimpleEvaluator(SymbolInformation symbol)
             : base(symbol)
         {
-            for (var i = 5; i <= 65; i++)
+            for (var i = 1; i <= 100; i++)
             {
                 this.emas[i] = Indicators.EMA(symbol, SourceType.Close, i);
                 this.demas[i] = Indicators.DEMA(symbol, SourceType.Close, i);
                 this.temas[i] = Indicators.TEMA(symbol, SourceType.Close, i);
+                this.smas[i] = Indicators.SMA(symbol, SourceType.Close, i);
             }
 
             this.emas[200] = Indicators.EMA(symbol, SourceType.Close, 200);
@@ -57,10 +60,10 @@
             new[]
                 {
                     (-15.0, -5.0, 1.0), // stop-loss
-                    (5.0, 35.0, 1.0), // fast EMA
-                    (36.0, 65.0, 1.0), // slow EMA
-                    (5.0, 35.0, 1.0), // exit fast EMA
-                    (36.0, 65.0, 1.0), // exit slow EMA
+                    (1.0, 30.0, 1.0), // fast EMA
+                    (31.0, 85.0, 1.0), // slow EMA
+                    (1.0, 30.0, 1.0), // exit fast EMA
+                    (31.0, 85.0, 1.0), // exit slow EMA
                     //(0.001, 0.04, 0.2), // diff
                     //(0.001, 0.04, 0.2), // diff
                 };
@@ -160,11 +163,11 @@
             //(this.macd, this.signal) = Indicators.MACD(this.Symbol, SourceType.Close, 20, 50, 9);
             //(this.shortStop, this.longStop) = Indicators.ELSZ(this.Symbol, 20, 2.5);
 
-            this.emaFastEntry = this.emas[Convert.ToInt32(this.Parameters[1])];
-            this.emaSlowEntry = this.emas[Convert.ToInt32(this.Parameters[2])];
+            this.emaFastEntry = this.smas[Convert.ToInt32(this.Parameters[1])];
+            this.emaSlowEntry = this.smas[Convert.ToInt32(this.Parameters[2])];
 
-            this.emaFastExit = this.emas[Convert.ToInt32(this.Parameters[3])];
-            this.emaSlowExit = this.emas[Convert.ToInt32(this.Parameters[4])];
+            this.emaFastExit = this.smas[Convert.ToInt32(this.Parameters[3])];
+            this.emaSlowExit = this.smas[Convert.ToInt32(this.Parameters[4])];
         }
     }
 }

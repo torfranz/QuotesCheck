@@ -51,7 +51,7 @@
                 exits[index] = this.IsExit(index);
             }
 
-            var result = new EvaluationResult(this, parameters);
+            var result = new EvaluationResult(this, parameters, Helper.Delta(this.Symbol.Close[startIndex], this.Symbol.Close[endIndex]));
 
             // read ideal trades if available
             var idealTradesPath = Path.Combine("ReferenceData", $"{this.Symbol.ISIN}-IdealTrades.json");

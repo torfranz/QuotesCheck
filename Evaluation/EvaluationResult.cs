@@ -8,15 +8,19 @@
 
     internal class EvaluationResult
     {
-        public EvaluationResult(Evaluator evaluator, double[] parameters)
+        public EvaluationResult(Evaluator evaluator, double[] parameters, double buyAndHoldGain)
         {
             this.CompanyName = evaluator.Symbol.CompanyName;
             this.ISIN = evaluator.Symbol.ISIN;
             this.EvaluatorName = evaluator.Name;
+            this.BuyAndHoldGain = buyAndHoldGain;
             this.Performance = new PerformanceMeasure(this.Trades);
             this.IdealPerformance = new PerformanceMeasure(this.IdealTrades);
             this.Parameters = parameters;
         }
+
+        [JsonConverter(typeof(DoubleJsonConverter))]
+        public double BuyAndHoldGain { get; }
 
         public IList<Trade> Trades { get; } = new List<Trade>();
 
@@ -41,7 +45,7 @@
 
         [JsonIgnore]
         public IterationResult CurrentIterationResult =>
-            new IterationResult { Iteration = this.Iteration, Parameters = (double[])this.Parameters.Clone(), Value = this.Performance.TotalGain };
+            new IterationResult { Iteration = this.Iteration, Parameters = (double[])this.Parameters.Clone(), Gain = this.Performance.TotalGain };
 
         public override string ToString()
         {
@@ -54,7 +58,7 @@
             Json.Save(
                 Path.Combine(
                     folder,
-                    $"Evaluation-{this.ISIN}-[{this.Iteration}]-[{this.Performance.TotalGain:F0}% +{this.Performance.PositiveTrades} -{this.Performance.NegativeTrades}]-{duration}ms-{now:yyyy-MM-dd-HH-mm-ss}.json"),
+                    $"Evaluation-{this.ISIN} - {this.Iteration} - {this.Performance.TotalGain:F0}% [{this.BuyAndHoldGain:F0}%] +{this.Performance.PositiveTrades} -{this.Performance.NegativeTrades} - {duration}ms-{now:yyyy-MM-dd-HH-mm-ss}.json"),
                 this);
         }
     }

@@ -37,15 +37,13 @@
         public SimpleEvaluator(SymbolInformation symbol)
             : base(symbol)
         {
-            for (var i = 1; i <= 100; i++)
+            for (var i = 1; i <= 200; i++)
             {
                 this.emas[i] = Indicators.EMA(symbol, SourceType.Close, i);
                 this.demas[i] = Indicators.DEMA(symbol, SourceType.Close, i);
                 this.temas[i] = Indicators.TEMA(symbol, SourceType.Close, i);
                 this.smas[i] = Indicators.SMA(symbol, SourceType.Close, i);
             }
-
-            this.emas[200] = Indicators.EMA(symbol, SourceType.Close, 200);
         }
 
         public override string Name => "Simple Evaluator";
@@ -54,16 +52,16 @@
 
         public override string ExitDescription => "EMA[p3] breaks through EMA[p4] from above or trailing stop loss p[0] is triggered";
 
-        public override double[] StartingParamters => new[] { -6, 20.0, 50, 20, 50, /*0.01, 0.03*/ };
+        public override double[] StartingParamters => new[] { -6, 10.0, 40, 20, 80, /*0.01, 0.03*/ };
 
         public override (double Lower, double Upper, double Step)[] ParamterRanges =>
             new[]
                 {
-                    (-15.0, -5.0, 1.0), // stop-loss
-                    (1.0, 30.0, 1.0), // fast EMA
-                    (31.0, 85.0, 1.0), // slow EMA
-                    (1.0, 30.0, 1.0), // exit fast EMA
-                    (31.0, 85.0, 1.0), // exit slow EMA
+                    (-20.0, -5.0, 1.0), // stop-loss
+                    (1.0, 20.0, 1.0), // fast EMA
+                    (21.0, 60.0, 1.0), // slow EMA
+                    (1.0, 50.0, 1.0), // exit fast EMA
+                    (51.0, 200.0, 1.0), // exit slow EMA
                     //(0.001, 0.04, 0.2), // diff
                     //(0.001, 0.04, 0.2), // diff
                 };

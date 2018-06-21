@@ -81,13 +81,13 @@
 
             return totalGain;
 
-            /*
+            
             return totalGain > 0
                        ? result.Performance.TotalGain * result.Performance.PositiveTrades
                          / (result.Performance.PositiveTrades + result.Performance.NegativeTrades)
                        : result.Performance.TotalGain * result.Performance.NegativeTrades
                          / (result.Performance.PositiveTrades + result.Performance.NegativeTrades);
-                         */
+            
         }
     }
 }

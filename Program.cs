@@ -65,28 +65,28 @@
             Trace.Indent();
 
             // Single
-            Parallel.ForEach(symbols.Values, symbol =>
-            {
-                var sw = Stopwatch.StartNew();
-                var singleOptimizer = new SingleOptimizer(new SimpleEvaluator(symbol), 13.0 / 25.0); // 13€ per 2500€ 
-                var singleResult = singleOptimizer.Run();
-                if (singleResult != null)
-                {
-                    Trace.TraceInformation($"Optimization finished after {sw.ElapsedMilliseconds}ms for {singleResult}");
-                    singleResult.Save("SingleBestData", sw.ElapsedMilliseconds);
-                }
-            });
+            //Parallel.ForEach(symbols.Values, symbol =>
+            //{
+            //    var sw = Stopwatch.StartNew();
+            //    var singleOptimizer = new SingleOptimizer(new SimpleEvaluator(symbol), 13.0 / 25.0); // 13€ per 2500€ 
+            //    var singleResult = singleOptimizer.Run();
+            //    if (singleResult != null)
+            //    {
+            //        Trace.TraceInformation($"Optimization finished after {sw.ElapsedMilliseconds}ms for {singleResult}");
+            //        singleResult.Save("SingleBestData", sw.ElapsedMilliseconds);
+            //    }
+            //});
 
             // Multi
-            //var swm = Stopwatch.StartNew();
-            //var optimizer = new MetaOptimizer(symbol => new SimpleEvaluator(symbol), 13.0 / 25.0);
+            var swm = Stopwatch.StartNew();
+            var optimizer = new MetaOptimizer(symbol => new SimpleEvaluator(symbol), 13.0 / 25.0);
 
-            //var metaResult = optimizer.Run(symbols.Values.ToArray());
-            //if (metaResult != null)
-            //{
-            //    Trace.TraceInformation($"Optimization finished after {swm.ElapsedMilliseconds}ms for {metaResult}");
-            //    metaResult.Save("MetaBestData", swm.ElapsedMilliseconds);
-            //}
+            var metaResult = optimizer.Run(symbols.Values.ToArray());
+            if (metaResult != null)
+            {
+                Trace.TraceInformation($"Optimization finished after {swm.ElapsedMilliseconds}ms for {metaResult}");
+                metaResult.Save("MetaBestData", swm.ElapsedMilliseconds);
+            }
 
             Trace.Unindent();
             Trace.TraceInformation($"Exited at {DateTime.Now}");

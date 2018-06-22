@@ -65,28 +65,50 @@
             Trace.Indent();
 
             // Single
-            //Parallel.ForEach(symbols.Values, symbol =>
-            //{
-            //    var sw = Stopwatch.StartNew();
-            //    var singleOptimizer = new SingleOptimizer(new SimpleEvaluator(symbol), 13.0 / 25.0); // 13€ per 2500€ 
-            //    var singleResult = singleOptimizer.Run();
-            //    if (singleResult != null)
-            //    {
-            //        Trace.TraceInformation($"Optimization finished after {sw.ElapsedMilliseconds}ms for {singleResult}");
-            //        singleResult.Save("SingleBestData", sw.ElapsedMilliseconds);
-            //    }
-            //});
+            Parallel.ForEach(symbols.Values, symbol =>
+            {
+                var sw = Stopwatch.StartNew();
+                var singleOptimizer = new SingleOptimizer(new SimpleEvaluator(symbol), 13.0 / 25.0); // 13€ per 2500€ 
+                var singleResult = singleOptimizer.Run();
+                if (singleResult != null)
+                {
+                    Trace.TraceInformation($"Optimization finished after {sw.ElapsedMilliseconds}ms for {singleResult}");
+                    singleResult.Save("SingleBestData", sw.ElapsedMilliseconds);
+                }
+            });
 
             // Multi
-            var swm = Stopwatch.StartNew();
-            var optimizer = new MetaOptimizer(symbol => new SimpleEvaluator(symbol), 13.0 / 25.0);
+            //var swm = Stopwatch.StartNew();
+            //var optimizer = new MetaOptimizer(symbol => new SimpleEvaluator(symbol), 13.0 / 25.0);
 
-            var metaResult = optimizer.Run(symbols.Values.ToArray());
-            if (metaResult != null)
-            {
-                Trace.TraceInformation($"Optimization finished after {swm.ElapsedMilliseconds}ms for {metaResult}");
-                metaResult.Save("MetaBestData", swm.ElapsedMilliseconds);
-            }
+            //var metaResult = optimizer.Run(symbols.Values.ToArray());
+            //if (metaResult != null)
+            //{
+            //    Trace.TraceInformation($"Optimization finished after {swm.ElapsedMilliseconds}ms for {metaResult}");
+            //    metaResult.Save("MetaBestData", swm.ElapsedMilliseconds);
+            //}
+
+            // Multi optimize on half, apply to other half
+            //var swm = Stopwatch.StartNew();
+            //var rnd = new Random();
+            //var randomSymbols = symbols.Values.OrderBy(x => rnd.Next()).ToArray();
+            //var learnSymbols = randomSymbols.Take(randomSymbols.Length / 2).ToArray();
+            //var validationSymbols = randomSymbols.Skip(randomSymbols.Length / 2).ToArray();
+            //var optimizer = new MetaOptimizer(symbol => new SimpleEvaluator(symbol), 13.0 / 25.0);
+
+            //var metaResult = optimizer.Run(learnSymbols);
+            //if (metaResult != null)
+            //{
+            //    Trace.TraceInformation($"Optimization finished after {swm.ElapsedMilliseconds}ms for {metaResult}");
+            //    metaResult.Save("MetaBestData", swm.ElapsedMilliseconds);
+
+            //    foreach (var symbol in validationSymbols)
+            //    {
+            //        var result = new SimpleEvaluator(symbol).Evaluate(metaResult.Parameters, 13.0 / 25.0);
+            //        result.Save("ValidationData", 0);
+            //    }
+            //}
+
 
             Trace.Unindent();
             Trace.TraceInformation($"Exited at {DateTime.Now}");

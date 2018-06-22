@@ -164,8 +164,8 @@
             this.emaFastEntry = this.smas[Convert.ToInt32(this.Parameters[1])];
             this.emaSlowEntry = this.smas[Convert.ToInt32(this.Parameters[2])];
 
-            this.emaFastExit = this.smas[Convert.ToInt32(this.Parameters[3])];
-            this.emaSlowExit = this.smas[Convert.ToInt32(this.Parameters[4])];
+            this.emaFastExit = this.emas[Convert.ToInt32(this.Parameters[3])];
+            this.emaSlowExit = this.emas[Convert.ToInt32(this.Parameters[4])];
         }
     }
 }

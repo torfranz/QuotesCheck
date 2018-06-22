@@ -6,6 +6,9 @@
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
+
+    using Microsoft.CodeAnalysis.CSharp.Syntax;
+
     using QuotesCheck.Evaluation;
 
     internal class Program
@@ -65,8 +68,9 @@
             Trace.Indent();
 
             // Single
-            Parallel.ForEach(symbols.Values, symbol =>
-            {
+            //Parallel.ForEach(symbols.Values, symbol =>
+            //{
+                var symbol = symbols["DE0007037129"];
                 var sw = Stopwatch.StartNew();
                 var singleOptimizer = new SingleOptimizer(new SimpleEvaluator(symbol), 13.0 / 25.0); // 13€ per 2500€ 
                 var singleResult = singleOptimizer.Run();
@@ -74,8 +78,9 @@
                 {
                     Trace.TraceInformation($"Optimization finished after {sw.ElapsedMilliseconds}ms for {singleResult}");
                     singleResult.Save("SingleBestData", sw.ElapsedMilliseconds);
+                    ImageCreator.Save(symbol, singleResult, "Images");
                 }
-            });
+            //});
 
             // Multi
             //var swm = Stopwatch.StartNew();

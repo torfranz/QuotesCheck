@@ -78,7 +78,13 @@
                 {
                     Trace.TraceInformation($"Optimization finished after {sw.ElapsedMilliseconds}ms for {singleResult}");
                     singleResult.Save("SingleBestData", sw.ElapsedMilliseconds);
-                    ImageCreator.Save(symbol, singleResult, "Images");
+                    ImageCreator.Save(symbol, singleResult, 
+                        new(string, double[])[]{
+                            ($"SMA {Convert.ToInt32(singleResult.Parameters[1])}", Indicators.SMA(symbol, SourceType.Close, Convert.ToInt32(singleResult.Parameters[1]))) ,
+                            ($"SMA {Convert.ToInt32(singleResult.Parameters[2])}", Indicators.SMA(symbol, SourceType.Close, Convert.ToInt32(singleResult.Parameters[2]))) ,
+                            ($"SMA {Convert.ToInt32(singleResult.Parameters[3])}", Indicators.SMA(symbol, SourceType.Close, Convert.ToInt32(singleResult.Parameters[3]))) ,
+                            ($"SMA {Convert.ToInt32(singleResult.Parameters[4])}", Indicators.SMA(symbol, SourceType.Close, Convert.ToInt32(singleResult.Parameters[4]))) },
+                        "Images");
                 }
             //});
 

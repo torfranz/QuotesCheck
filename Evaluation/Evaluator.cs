@@ -167,5 +167,7 @@
 
             trade.HighestValue = max;
         }
+
+        public abstract IList<(string Name, double[] Values, bool IsLine, bool IsDot)> CurveData { get; }
     }
 }

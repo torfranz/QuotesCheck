@@ -2,15 +2,15 @@
 {
     internal class SingleOptimizer
     {
-        private readonly Evaluator evaluator;
-
         private readonly double costOfTrades;
 
         internal SingleOptimizer(Evaluator evaluator, double costOfTrades)
         {
-            this.evaluator = evaluator;
+            this.Evaluator = evaluator;
             this.costOfTrades = costOfTrades;
         }
+
+        public Evaluator Evaluator { get; }
 
         internal EvaluationResult Run()
         {
@@ -31,17 +31,17 @@
             //return optimalResult;
 
             // result before optimization
-            var bestResult = this.evaluator.Evaluate(this.evaluator.StartingParamters, this.costOfTrades);
+            var bestResult = this.Evaluator.Evaluate(this.Evaluator.StartingParamters, this.costOfTrades);
 
             // Optimize it (first round)
             var annealing =
-                new BacktestingAnnealing(this.Evaluator, this.evaluator.StartingParamters, this.evaluator.ParamterRanges)
+                new BacktestingAnnealing(this.Evaluate, this.Evaluator.StartingParamters, this.Evaluator.ParamterRanges)
                     {
                         Cycles = 10000,
                         StartTemperature = 1000
                     };
             annealing.Anneal();
-            var result = this.evaluator.Evaluate(annealing.Array, this.costOfTrades);
+            var result = this.Evaluator.Evaluate(annealing.Array, this.costOfTrades);
             result.Iteration = 1;
             result.IterationsResults = bestResult.IterationsResults;
             result.IterationsResults.Add(result.CurrentIterationResult);
@@ -53,17 +53,17 @@
             for (var iteration = 2; iteration <= 10; iteration++)
             {
                 annealing =
-                    new BacktestingAnnealing(this.Evaluator, bestResult.Parameters, this.evaluator.ParamterRanges) { Cycles = 10000, StartTemperature = 1000 };
+                    new BacktestingAnnealing(this.Evaluate, bestResult.Parameters, this.Evaluator.ParamterRanges) { Cycles = 10000, StartTemperature = 1000 };
                 annealing.Anneal();
 
                 // gain at least 1%
-                var best = this.Evaluator(bestResult.Parameters);
+                var best = this.Evaluate(bestResult.Parameters);
                 if (annealing.Energy <= (best > 0.0 ? 1.01 * best : 0.99 * best))
                 {
                     break;
                 }
 
-                result = this.evaluator.Evaluate(annealing.Array, this.costOfTrades);
+                result = this.Evaluator.Evaluate(annealing.Array, this.costOfTrades);
                 result.Iteration = iteration;
                 result.IterationsResults = bestResult.IterationsResults;
                 result.IterationsResults.Add(result.CurrentIterationResult);
@@ -74,20 +74,18 @@
             return bestResult;
         }
 
-        private double Evaluator(double[] parameters)
+        private double Evaluate(double[] parameters)
         {
-            var result = this.evaluator.Evaluate(parameters, this.costOfTrades);
+            var result = this.Evaluator.Evaluate(parameters, this.costOfTrades);
             var totalGain = result.Performance.TotalGain;
 
             return totalGain;
 
-            
             return totalGain > 0
                        ? result.Performance.TotalGain * result.Performance.PositiveTrades
                          / (result.Performance.PositiveTrades + result.Performance.NegativeTrades)
                        : result.Performance.TotalGain * result.Performance.NegativeTrades
                          / (result.Performance.PositiveTrades + result.Performance.NegativeTrades);
-            
         }
     }
 }

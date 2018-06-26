@@ -33,16 +33,20 @@
 
         private double[] macd;
 
+        private double[] tp;
+
         public SimpleEvaluator(SymbolInformation symbol)
             : base(symbol)
         {
             for (var i = 1; i <= 200; i++)
             {
-                this.emas[i] = Indicators.EMA(symbol, SourceType.Close, i);
-                this.demas[i] = Indicators.DEMA(symbol, SourceType.Close, i);
-                this.temas[i] = Indicators.TEMA(symbol, SourceType.Close, i);
+                //this.emas[i] = Indicators.EMA(symbol, SourceType.Close, i);
+                //this.demas[i] = Indicators.DEMA(symbol, SourceType.Close, i);
+                //this.temas[i] = Indicators.TEMA(symbol, SourceType.Close, i);
                 this.smas[i] = Indicators.SMA(symbol, SourceType.Close, i);
             }
+
+            this.tp = Indicators.TP(symbol);
         }
 
         public override string Name => "Simple Evaluator";
@@ -51,7 +55,7 @@
 
         public override string ExitDescription => "EMA[p3] breaks through EMA[p4] from above or trailing stop loss p[0] is triggered";
 
-        public override double[] StartingParamters => new[] { 6, 10.0, 40, 20, 80, /*0.01, 0.03*/ };
+        public override double[] StartingParamters => new[] { 6, 10.0, 40, 5, /*80, 0.01, 0.03*/ };
 
         public override (double Lower, double Upper, double Step)[] ParamterRanges =>
             new[]
@@ -59,15 +63,15 @@
                     (5, 20.0, 1.0), // stop-loss
                     (1.0, 20.0, 1.0), // fast EMA
                     (21.0, 60.0, 1.0), // slow EMA
-                    (1.0, 50.0, 1.0), // exit fast EMA
-                    (51.0, 200.0, 1.0), // exit slow EMA
+                    (1.0, 10.0, 0.5), // exit fast EMA
+                    //(51.0, 200.0, 1.0), // exit slow EMA
                     //(0.001, 0.04, 0.2), // diff
                     //(0.001, 0.04, 0.2), // diff
                 };
 
         protected override bool IsEntry(int index)
         {
-            if ((this.FastEntry[index + 1] < this.SlowEntry[index + 1]) && (this.FastEntry[index] > this.SlowEntry[index]))
+            if ((this.FastEntry[index + 2] < this.SlowEntry[index + 2]) && this.FastEntry[index + 1] > this.SlowEntry[index + 1] && (this.FastEntry[index] > this.SlowEntry[index]))
             {
                 return true;
             }
@@ -124,7 +128,12 @@
 
         protected override bool IsExit(int index)
         {
-            if ((this.FastExit[index + 1] > this.SlowExit[index + 1]) && (this.FastExit[index] < this.SlowExit[index]))
+            //if ((this.FastExit[index + 1] > this.SlowExit[index + 1]) && (this.FastExit[index] < this.SlowExit[index]))
+            //{
+            //    return true;
+            //}
+
+            if (this.Parameters[3] + Helper.Delta(this.tp[index + 1], this.tp[index]) < 0)
             {
                 return true;
             }
@@ -163,8 +172,26 @@
             this.FastEntry = this.smas[Convert.ToInt32(this.Parameters[1])];
             this.SlowEntry = this.smas[Convert.ToInt32(this.Parameters[2])];
 
-            this.FastExit = this.smas[Convert.ToInt32(this.Parameters[3])];
-            this.SlowExit = this.smas[Convert.ToInt32(this.Parameters[4])];
+            this.FastExit = this.smas[Convert.ToInt32(this.Parameters[1])];
+            this.SlowExit = this.smas[Convert.ToInt32(this.Parameters[2])];
         }
+
+        public override IList<(string Name, double[] Values, bool IsLine, bool IsDot)> CurveData =>
+            new[]
+                {
+                    ($"SMA {Convert.ToInt32(this.Parameters[1])}",
+                        this.smas[Convert.ToInt32(this.Parameters[1])], true, false),
+                    ($"SMA {Convert.ToInt32(this.Parameters[2])}",
+                        this.smas[Convert.ToInt32(this.Parameters[2])], true, false),
+                    //($"SMA {Convert.ToInt32(this.Parameters[3])}",
+                    //    this.smas[Convert.ToInt32(this.Parameters[3])], true, false),
+                    //($"SMA {Convert.ToInt32(this.Parameters[4])}",
+                    //    this.smas[Convert.ToInt32(this.Parameters[4])], true, false),
+                    ($"PSAR 0.02, 0.02, 0.2",
+                        Indicators.PSAR(this.Symbol, 0.02, 0.02, 0.2), false, true),
+                    ($"SMA 200",
+                        Indicators.SMA(this.Symbol, SourceType.Close, Convert.ToInt32(200)), true, false),
+                    //($"TP",this.tp, true, false),
+                };
     }
 }

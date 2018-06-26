@@ -3,6 +3,8 @@
     using System;
     using System.Diagnostics;
 
+    using MathNet.Numerics.Statistics;
+
     internal static class Indicators
     {
         public static double[] EMA(SymbolInformation symbol, SourceType sourceType, int period)
@@ -114,6 +116,110 @@
             }
 
             return st;
+        }
+
+        public static double[] HiLoDiff(SymbolInformation symbol)
+        {
+            var high = symbol.High;
+            var low = symbol.Low;
+            var hiLoDiff = Create(high.Length);
+            for (var index = high.Length - 1; index >= 0; index--)
+            {
+                hiLoDiff[index] = high[index] - low[index];
+            }
+
+            return hiLoDiff;
+        }
+
+        public static double[] PSAR(SymbolInformation symbol, double factor, double increment, double factorMax)
+        {
+            // Difference of High and Low
+            var hiLoDiff = HiLoDiff(symbol);
+
+            // STDEV of differences
+            var stDev = hiLoDiff.StandardDeviation();
+
+            var high = symbol.High;
+            var low = symbol.Low;
+            var sarArr = Create(high.Length);
+
+            /* Find first non-NA value */
+            var beg = high.Length - 2;
+            for (var i = high.Length - 1; i >= 0; i++)
+            {
+                if ((high[i] == 0) || (low[i] == 0))
+                {
+                    sarArr[i] = 0;
+                    beg--;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            /* Initialize values needed by the routine */
+            var sig0 = 1;
+            var xpt0 = high[beg + 1];
+            var af0 = factor;
+            sarArr[beg + 1] = low[beg + 1] - stDev;
+
+            for (var idx = beg; idx >= 0; idx--)
+            {
+                /* Increment signal, extreme point, and acceleration factor */
+                var sig1 = sig0;
+                var xpt1 = xpt0;
+                var af1 = af0;
+
+                /* Local extrema */
+                var lmin = low[idx + 1] > low[idx] ? low[idx] : low[idx + 1];
+                var lmax = high[idx + 1] > high[idx] ? high[idx + 1] : high[idx];
+                /* Create signal and extreme price vectors */
+                if (sig1 == 1)
+                {
+                    /* Previous buy signal */
+                    sig0 = low[idx] > sarArr[idx + 1] ? 1 : -1; /* New signal */
+                    xpt0 = lmax > xpt1 ? lmax : xpt1; /* New extreme price */
+                }
+                else
+                {
+                    /* Previous sell signal */
+                    sig0 = high[idx] < sarArr[idx + 1] ? -1 : 1; /* New signal */
+                    xpt0 = lmin > xpt1 ? xpt1 : lmin; /* New extreme price */
+                }
+
+                /*
+                    * Calculate acceleration factor (af)
+                    * and stop-and-reverse (sar) vector
+                */
+
+                /* No signal change */
+                if (sig0 == sig1)
+                {
+                    /* Initial calculations */
+                    sarArr[idx] = sarArr[idx + 1] + (xpt1 - sarArr[idx + 1]) * af1;
+                    af0 = af1 >= factorMax ? factorMax : factor + increment;
+                    /* Current buy signal */
+                    if (sig0 == 1)
+                    {
+                        af0 = xpt0 > xpt1 ? af0 : af1; /* Update acceleration factor */
+                        sarArr[idx] = sarArr[idx] > lmin ? lmin : sarArr[idx]; /* Determine sar value */
+                    }
+                    /* Current sell signal */
+                    else
+                    {
+                        af0 = xpt0 < xpt1 ? af0 : af1; /* Update acceleration factor */
+                        sarArr[idx] = sarArr[idx] > lmax ? sarArr[idx] : lmax; /* Determine sar value */
+                    }
+                }
+                else /* New signal */
+                {
+                    af0 = factor; /* reset acceleration factor */
+                    sarArr[idx] = xpt0; /* set sar value */
+                }
+            }
+
+            return sarArr;
         }
 
         public static double[] TP(SymbolInformation symbol)

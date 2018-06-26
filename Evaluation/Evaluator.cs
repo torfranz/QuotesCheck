@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
+    using System.Threading.Tasks;
 
     internal abstract class Evaluator
     {
@@ -39,17 +40,20 @@
             var entries = new bool[this.Symbol.TimeSeries.Count];
             var exits = new bool[this.Symbol.TimeSeries.Count];
 
-            //Parallel.For(startIndex, endIndex, index =>
-            //{
-            //    entries[index] = IsEntry(index);
-            //    exits[index] = IsExit(index);
-            //});
+            Parallel.For(
+                startIndex,
+                endIndex,
+                index =>
+                    {
+                        entries[index] = this.IsEntry(index);
+                        exits[index] = this.IsExit(index);
+                    });
 
-            for (var index = startIndex; index < endIndex; index++)
-            {
-                entries[index] = this.IsEntry(index);
-                exits[index] = this.IsExit(index);
-            }
+            //for (var index = startIndex; index < endIndex; index++)
+            //{
+            //    entries[index] = this.IsEntry(index);
+            //    exits[index] = this.IsExit(index);
+            //}
 
             var result = new EvaluationResult(this, parameters, Helper.Delta(this.Symbol.Close[startIndex], this.Symbol.Close[endIndex]));
 
@@ -113,8 +117,7 @@
                 else
                 {
                     // finish if exit criteria met or stop loss value is triggered
-                    if (exits[index] || 
-                        (Helper.Delta(this.Symbol.TimeSeries[index].Close, highestClose) < parameters[0]))
+                    if (exits[index] || (parameters[0] + Helper.Delta(this.Symbol.TimeSeries[index].Close, highestClose) < 0))
                     {
                         // finish trade
                         this.ExitTrade(activeTrade, index);

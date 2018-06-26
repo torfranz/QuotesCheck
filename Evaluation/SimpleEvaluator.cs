@@ -51,12 +51,12 @@
 
         public override string ExitDescription => "EMA[p3] breaks through EMA[p4] from above or trailing stop loss p[0] is triggered";
 
-        public override double[] StartingParamters => new[] { -6, 10.0, 40, 20, 80, /*0.01, 0.03*/ };
+        public override double[] StartingParamters => new[] { 6, 10.0, 40, 20, 80, /*0.01, 0.03*/ };
 
         public override (double Lower, double Upper, double Step)[] ParamterRanges =>
             new[]
                 {
-                    (-20.0, -5.0, 1.0), // stop-loss
+                    (5, 20.0, 1.0), // stop-loss
                     (1.0, 20.0, 1.0), // fast EMA
                     (21.0, 60.0, 1.0), // slow EMA
                     (1.0, 50.0, 1.0), // exit fast EMA

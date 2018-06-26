@@ -5,9 +5,6 @@
     using System.Globalization;
     using System.Linq;
     using System.Threading;
-    using System.Threading.Tasks;
-
-    using Microsoft.CodeAnalysis.CSharp.Syntax;
 
     using QuotesCheck.Evaluation;
 
@@ -70,22 +67,30 @@
             // Single
             //Parallel.ForEach(symbols.Values, symbol =>
             //{
-                var symbol = symbols["DE0007037129"];
-                var sw = Stopwatch.StartNew();
-                var singleOptimizer = new SingleOptimizer(new SimpleEvaluator(symbol), 13.0 / 25.0); // 13€ per 2500€ 
-                var singleResult = singleOptimizer.Run();
-                if (singleResult != null)
-                {
-                    Trace.TraceInformation($"Optimization finished after {sw.ElapsedMilliseconds}ms for {singleResult}");
-                    singleResult.Save("SingleBestData", sw.ElapsedMilliseconds);
-                    ImageCreator.Save(symbol, singleResult, 
-                        new(string, double[])[]{
-                            ($"SMA {Convert.ToInt32(singleResult.Parameters[1])}", Indicators.SMA(symbol, SourceType.Close, Convert.ToInt32(singleResult.Parameters[1]))) ,
-                            ($"SMA {Convert.ToInt32(singleResult.Parameters[2])}", Indicators.SMA(symbol, SourceType.Close, Convert.ToInt32(singleResult.Parameters[2]))) ,
-                            ($"SMA {Convert.ToInt32(singleResult.Parameters[3])}", Indicators.SMA(symbol, SourceType.Close, Convert.ToInt32(singleResult.Parameters[3]))) ,
-                            ($"SMA {Convert.ToInt32(singleResult.Parameters[4])}", Indicators.SMA(symbol, SourceType.Close, Convert.ToInt32(singleResult.Parameters[4]))) },
-                        "Images");
-                }
+            var symbol = symbols["DE0007037129"];
+            var sw = Stopwatch.StartNew();
+            var singleOptimizer = new SingleOptimizer(new SimpleEvaluator(symbol), 13.0 / 25.0); // 13€ per 2500€ 
+            var singleResult = singleOptimizer.Run();
+            if (singleResult != null)
+            {
+                Trace.TraceInformation($"Optimization finished after {sw.ElapsedMilliseconds}ms for {singleResult}");
+                singleResult.Save("SingleBestData", sw.ElapsedMilliseconds);
+                ImageCreator.Save(
+                    symbol,
+                    singleResult,
+                    new[]
+                        {
+                            ($"SMA {Convert.ToInt32(singleResult.Parameters[1])}",
+                                Indicators.SMA(symbol, SourceType.Close, Convert.ToInt32(singleResult.Parameters[1]))),
+                            ($"SMA {Convert.ToInt32(singleResult.Parameters[2])}",
+                                Indicators.SMA(symbol, SourceType.Close, Convert.ToInt32(singleResult.Parameters[2]))),
+                            ($"SMA {Convert.ToInt32(singleResult.Parameters[3])}",
+                                Indicators.SMA(symbol, SourceType.Close, Convert.ToInt32(singleResult.Parameters[3]))),
+                            ($"SMA {Convert.ToInt32(singleResult.Parameters[4])}",
+                                Indicators.SMA(symbol, SourceType.Close, Convert.ToInt32(singleResult.Parameters[4])))
+                        },
+                    "Images");
+            }
             //});
 
             // Multi
@@ -119,7 +124,6 @@
             //        result.Save("ValidationData", 0);
             //    }
             //}
-
 
             Trace.Unindent();
             Trace.TraceInformation($"Exited at {DateTime.Now}");

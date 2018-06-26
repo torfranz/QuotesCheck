@@ -33,6 +33,20 @@
 
         public int Days => (this.SellDate - this.BuyDate).Days;
 
+        internal double[] GetStopLossCurve(SymbolInformation symbol, double stopLoss)
+        {
+            var curve = new double[this.BuyIndex - this.SellIndex];
+
+            var highestClose = symbol.Close[this.BuyIndex];
+            for (var i = 1; i < this.BuyIndex - this.SellIndex; i++)
+            {
+                curve[i] = highestClose * (1 - stopLoss / 100);
+                highestClose = Math.Max(highestClose, symbol.Close[this.BuyIndex - i]);
+            }
+
+            return curve;
+        }
+
         public override string ToString()
         {
             return $"{this.Gain:F}";

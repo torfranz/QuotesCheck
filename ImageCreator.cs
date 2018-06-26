@@ -64,7 +64,19 @@
                             Color.Black,
                             SymbolType.Circle).Line.Width = 3 ;
 
-                                                
+                        // Stop-Loss
+                        var stopLossCurve = pane.AddCurve($"Stop-Loss {result.Parameters[0]:F1}%", new double[] { }, new double[] { }, Color.DarkKhaki, SymbolType.None);
+                        var stopLoss = trade.GetStopLossCurve(symbol, result.Parameters[0]);
+                        stopLossCurve.Line.Width = 3;
+                        stopLossCurve.Line.IsAntiAlias = true;
+                        for (var i = trade.BuyIndex - 1; i > trade.SellIndex; i--)
+                        {
+                            var series = symbol.TimeSeries[i];
+                            var day = new XDate(series.Day);
+
+                            stopLossCurve.AddPoint(day, stopLoss[trade.BuyIndex - i]);
+                        }
+                        
                         // axis settings
                         pane.XAxis.Type = AxisType.Date;
                         pane.XAxis.Scale.FontSpec.Size = 6;

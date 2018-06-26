@@ -63,7 +63,10 @@
                                     return curve;
                                 }).ToArray();
 
-                        for (var i = trade.BuyIndex + 10; i >= Math.Max(0, trade.SellIndex - 10); i--)
+                        var offset = 10 + Math.Max(0, 100 - (trade.BuyIndex - trade.SellIndex)) / 2;
+                        var indexHigh = Math.Min(symbol.TimeSeries.Count - 1, trade.BuyIndex + offset);
+                        var indexLow = Math.Max(0, trade.SellIndex - offset);
+                        for (var i = indexHigh; i >= indexLow; i--)
                         {
                             var series = symbol.TimeSeries[i];
                             var day = new XDate(series.Day);
@@ -114,8 +117,8 @@
                         // axis settings
                         pane.XAxis.Type = AxisType.Date;
                         pane.XAxis.Scale.FontSpec.Size = 6;
-                        pane.XAxis.Scale.Min = new XDate(symbol.TimeSeries[trade.BuyIndex + 10].Day);
-                        pane.XAxis.Scale.Max = new XDate(symbol.TimeSeries[Math.Max(0, trade.SellIndex - 10)].Day);
+                        pane.XAxis.Scale.Min = new XDate(symbol.TimeSeries[indexHigh].Day);
+                        pane.XAxis.Scale.Max = new XDate(symbol.TimeSeries[indexLow].Day);
                         pane.XAxis.MinorGrid.IsVisible = true;
                         pane.XAxis.MajorGrid.IsVisible = true;
 

@@ -5,6 +5,7 @@
     using System.Globalization;
     using System.Linq;
     using System.Threading;
+    using System.Threading.Tasks;
 
     using QuotesCheck.Evaluation;
 
@@ -65,23 +66,38 @@
             Trace.Indent();
 
             // Single
-            //Parallel.ForEach(symbols.Values, symbol =>
-            //{
-            var symbol = symbols["DE0007037129"];
-            var sw = Stopwatch.StartNew();
+            Parallel.ForEach(symbols.Values, symbol =>
+            {
+                if (symbol.TimeSeries.Count < 1000)
+                {
+                    Trace.TraceInformation($"{symbol.CompanyName} [{symbol.ISIN}] fas too few data points");
+                    return;
+                }
+
+                //var symbol = symbols["DE000A1EWWW0"];
+                var sw = Stopwatch.StartNew();
+            var learnSeries = symbol.TimeSeries.Skip(symbol.TimeSeries.Count * 1 / 3).ToArray();
+            var validationSeries = symbol.TimeSeries.Take(symbol.TimeSeries.Count * 1 / 3).ToArray();
+            symbol.TimeSeries = learnSeries;
             var singleOptimizer = new SingleOptimizer(new SimpleEvaluator(symbol), 13.0 / 25.0); // 13€ per 2500€ 
             var singleResult = singleOptimizer.Run();
             if (singleResult != null)
             {
                 Trace.TraceInformation($"Optimization finished after {sw.ElapsedMilliseconds}ms for {singleResult}");
+
+                // validate results
+                symbol = symbol.CreateCopyShell();
+                symbol.TimeSeries = validationSeries;
+                var validationEvaluator = new SimpleEvaluator(symbol);
+                singleResult = validationEvaluator.Evaluate(singleResult.Parameters, 13.0 / 25.0);
                 singleResult.Save("SingleBestData", sw.ElapsedMilliseconds);
-                ImageCreator.Save(
-                    symbol,
-                    singleResult,
-                    singleOptimizer.Evaluator.CurveData,
-                    "SingleBestData");
-            }
-            //});
+                    ImageCreator.Save(
+                        symbol,
+                        singleResult,
+                        validationEvaluator.CurveData,
+                        "SingleBestData");
+                }
+            });
 
             // Multi
             //var swm = Stopwatch.StartNew();

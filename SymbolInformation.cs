@@ -28,7 +28,7 @@
         private DateTime[] date;
 
         [JsonProperty]
-        public IList<TimeSeries> TimeSeries { get; private set; } = new List<TimeSeries>();
+        public IList<TimeSeries> TimeSeries { get; set; } = new List<TimeSeries>();
 
         public string CompanyName => this.company_name;
 
@@ -59,6 +59,11 @@
 
         [JsonProperty]
         private string reuters_exchange_code { get; set; }
+
+        public SymbolInformation CreateCopyShell()
+        {
+            return new SymbolInformation { company_name = this.company_name, isin = this.isin, };
+        }
 
         public double[] Data(SourceType sourceType)
         {
@@ -102,14 +107,17 @@
                     this,
                     daysSpan > 90 ? Const_TIME_SERIES_DAILY.TIME_SERIES_DAILY_outputsize.full : Const_TIME_SERIES_DAILY.TIME_SERIES_DAILY_outputsize.compact);
 
+                var adding = false;
                 for (var index = newSeries.Count - 1; index >= 0; index--)
                 {
-                    daysSpan = (newSeries[index].Day - this.TimeSeries[0].Day).Days;
-                    Debug.Assert(daysSpan <= 1);
-                    if (daysSpan == 1)
+                    if (adding)
                     {
                         Trace.TraceInformation($"Add new data {newSeries[index]}");
                         this.TimeSeries.Insert(0, newSeries[index]);
+                    }
+                    else
+                    {
+                        adding = newSeries[index].Day == this.TimeSeries[0].Day;
                     }
                 }
             }

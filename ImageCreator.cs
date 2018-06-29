@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Drawing;
+    using System.Drawing.Drawing2D;
     using System.Drawing.Imaging;
     using System.IO;
     using System.Linq;
@@ -44,8 +45,6 @@
                         pane.Legend.FontSpec.Size = 6;
 
                         // Candles & Curves
-                        var spl = new StockPointList();
-
                         var colorIdx = 0;
                         var curves = curveData.Select(
                             data =>
@@ -66,15 +65,25 @@
                         var offset = 10 + Math.Max(0, 100 - (trade.BuyIndex - trade.SellIndex)) / 2;
                         var indexHigh = Math.Min(symbol.TimeSeries.Count - 1, trade.BuyIndex + offset);
                         var indexLow = Math.Max(0, trade.SellIndex - offset);
+                        var candles = new StockPointList();
+                        var tradeCandles = new StockPointList();
                         for (var i = indexHigh; i >= indexLow; i--)
                         {
                             var series = symbol.TimeSeries[i];
                             var day = new XDate(series.Day);
 
                             // candle
-                            var pt = new StockPt(day, series.High, series.Low, series.Open, series.Close, series.Volume);
-                            spl.Add(pt);
+                            var candle = new StockPt(day, series.High, series.Low, series.Open, series.Close, series.Volume);
 
+                            if (i == trade.BuyIndex || i == trade.SellIndex)
+                            {
+                                tradeCandles.Add(candle);
+                            }
+                            else
+                            {
+                                candles.Add(candle);
+                            }
+                            
                             // curves
                             for (var curveIdx = 0; curveIdx < curves.Length; curveIdx++)
                             {
@@ -82,20 +91,31 @@
                             }
                         }
 
-                        var myCurve = pane.AddJapaneseCandleStick($"{trade.BuyDate:yyyy-MM-dd} - {trade.SellDate:yyyy-MM-dd}", spl);
-                        myCurve.Stick.IsAutoSize = true;
-                        myCurve.Stick.FallingFill = new Fill(Color.Red);
-                        myCurve.Stick.RisingFill = new Fill(Color.Green);
+                        // add standard candles
+                        var candlesCurve = pane.AddJapaneseCandleStick($"{trade.BuyDate:yyyy-MM-dd} - {trade.SellDate:yyyy-MM-dd}", candles);
+                        candlesCurve.Stick.IsAutoSize = true;
+                        candlesCurve.Stick.FallingFill = new Fill(Color.Red);
+                        candlesCurve.Stick.RisingFill = new Fill(Color.Green);
 
+                        // add trading candles
+                        var tradingCandlesCurve = pane.AddJapaneseCandleStick("", tradeCandles);
+                        tradingCandlesCurve.Label.IsVisible = false;
+                        tradingCandlesCurve.Stick.Size = 2;
+                        tradingCandlesCurve.Stick.FallingFill = new Fill(Color.Orange);
+                        tradingCandlesCurve.Stick.RisingFill = new Fill(Color.LightGreen);
+                        
                         // Buy-Sell Line
-                        pane.AddCurve(
+                        var buySellCurve = pane.AddCurve(
                             $"{trade.BuyValue:F2} - {trade.SellValue:F2}",
                             new double[] { new XDate(trade.BuyDate), new XDate(trade.SellDate) },
                             new[] { trade.BuyValue, trade.SellValue },
-                            Color.Black,
-                            SymbolType.Circle).Line.Width = 3;
+                            Color.Purple,
+                            SymbolType.Circle);
+                        buySellCurve.Line.Width = 3;
+                        buySellCurve.Line.Style = DashStyle.Dot;
 
                         // Stop-Loss
+                        /*
                         var stopLossCurve = pane.AddCurve(
                             $"Stop-Loss {result.Parameters[0]:F1}%",
                             new double[] { },
@@ -113,6 +133,7 @@
 
                             stopLossCurve.AddPoint(day, stopLoss[trade.BuyIndex - i]);
                         }
+                        */
 
                         // axis settings
                         pane.XAxis.Type = AxisType.Date;

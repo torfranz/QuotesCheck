@@ -790,7 +790,7 @@
             return tr;
         }
 
-        private static double[] EMA(double[] data, int period)
+        public static double[] EMA(double[] data, int period)
         {
             // wf = 2 / (n + 1)
             // ema = nn(ema[1], close) + wf * nn(close - ema[1], 0)
@@ -810,7 +810,7 @@
             return ema;
         }
 
-        private static double[] SMA(double[] data, int period)
+        public static double[] SMA(double[] data, int period)
         {
             // sma = nn(sma[1], 0) + (close / n) - nn(close[n] / n, 0)
             var sma = Create(data.Length);
@@ -824,7 +824,7 @@
             return sma;
         }
 
-        private static double[] DEMA(double[] data, int period)
+        public static double[] DEMA(double[] data, int period)
         {
             // dema = 2*ema(close, n) - ema(ema(close, n), n)
 
@@ -972,7 +972,7 @@
             return (macd, EMA(macd, signalPeriod));
         }
 
-        private static double[] TEMA(double[] data, int period)
+        public static double[] TEMA(double[] data, int period)
         {
             // ema1 = ema(close, n)
             // ema2 = ema(ema1, n)

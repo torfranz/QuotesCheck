@@ -31,7 +31,7 @@
             //return optimalResult;
 
             // result before optimization
-            var bestResult = this.Evaluator.Evaluate(this.Evaluator.StartingParamters, this.costOfTrades);
+            var bestResult = this.Evaluator.Evaluate(this.costOfTrades);
 
             // Optimize it (first round)
             var annealing =
@@ -79,7 +79,7 @@
             var result = this.Evaluator.Evaluate(parameters, this.costOfTrades);
             var totalGain = result.Performance.TotalGain;
 
-            return totalGain;
+            //return totalGain;
 
             return totalGain > 0
                        ? result.Performance.TotalGain * result.Performance.PositiveTrades

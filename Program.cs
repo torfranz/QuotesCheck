@@ -68,34 +68,40 @@
             // Single
             Parallel.ForEach(symbols.Values, symbol =>
             {
+                //var symbol = symbols["DE0005439004"];
                 if (symbol.TimeSeries.Count < 1000)
                 {
                     Trace.TraceInformation($"{symbol.CompanyName} [{symbol.ISIN}] fas too few data points");
                     return;
                 }
 
-                //var symbol = symbols["DE000A1EWWW0"];
+                
                 var sw = Stopwatch.StartNew();
-            var learnSeries = symbol.TimeSeries.Skip(symbol.TimeSeries.Count * 1 / 3).ToArray();
-            var validationSeries = symbol.TimeSeries.Take(symbol.TimeSeries.Count * 1 / 3).ToArray();
+            var learnSeries = symbol.TimeSeries.Skip(symbol.TimeSeries.Count * 2 / 3).ToArray();
+            var validationSeries = symbol.TimeSeries.Take(symbol.TimeSeries.Count * 2 / 3).ToArray();
             symbol.TimeSeries = learnSeries;
+
             var singleOptimizer = new SingleOptimizer(new SimpleEvaluator(symbol), 13.0 / 25.0); // 13€ per 2500€ 
             var singleResult = singleOptimizer.Run();
+            // var singleResult = new SimpleEvaluator(symbol).Evaluate(13.0 / 25.0);
             if (singleResult != null)
             {
-                Trace.TraceInformation($"Optimization finished after {sw.ElapsedMilliseconds}ms for {singleResult}");
+                var duration = sw.ElapsedMilliseconds;
+                Trace.TraceInformation($"Optimization finished after {duration}ms for {singleResult}");
+
+                singleResult.Save("LearningResults", duration);
 
                 // validate results
                 symbol = symbol.CreateCopyShell();
                 symbol.TimeSeries = validationSeries;
                 var validationEvaluator = new SimpleEvaluator(symbol);
                 singleResult = validationEvaluator.Evaluate(singleResult.Parameters, 13.0 / 25.0);
-                singleResult.Save("SingleBestData", sw.ElapsedMilliseconds);
+                singleResult.Save("ValidationResults", duration);
                     ImageCreator.Save(
                         symbol,
                         singleResult,
                         validationEvaluator.CurveData,
-                        "SingleBestData");
+                        "ValidationResults");
                 }
             });
 

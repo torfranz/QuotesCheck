@@ -28,6 +28,11 @@
 
         protected double[] Parameters { get; private set; }
 
+        internal EvaluationResult Evaluate(double costOfTrades)
+        {
+            return this.Evaluate(this.StartingParamters, costOfTrades);
+        }
+
         internal EvaluationResult Evaluate(double[] parameters, double costOfTrades)
         {
             var startIndex = 1;

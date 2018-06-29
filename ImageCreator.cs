@@ -115,7 +115,6 @@
                         buySellCurve.Line.Style = DashStyle.Dot;
 
                         // Stop-Loss
-                        /*
                         var stopLossCurve = pane.AddCurve(
                             $"Stop-Loss {result.Parameters[0]:F1}%",
                             new double[] { },
@@ -133,7 +132,6 @@
 
                             stopLossCurve.AddPoint(day, stopLoss[trade.BuyIndex - i]);
                         }
-                        */
 
                         // axis settings
                         pane.XAxis.Type = AxisType.Date;

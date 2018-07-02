@@ -77,8 +77,8 @@
 
                 
                 var sw = Stopwatch.StartNew();
-            var learnSeries = symbol.TimeSeries.Skip(symbol.TimeSeries.Count * 2 / 3).ToArray();
-            var validationSeries = symbol.TimeSeries.Take(symbol.TimeSeries.Count * 2 / 3).ToArray();
+            var learnSeries = symbol.TimeSeries.Skip(symbol.TimeSeries.Count * 1 / 3).ToArray();
+            var validationSeries = symbol.TimeSeries.Take(symbol.TimeSeries.Count * 1 / 3).ToArray();
             symbol.TimeSeries = learnSeries;
 
             var singleOptimizer = new SingleOptimizer(new SimpleEvaluator(symbol), 13.0 / 25.0); // 13€ per 2500€ 

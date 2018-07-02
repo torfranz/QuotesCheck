@@ -70,10 +70,11 @@
         public override (double Lower, double Upper, double Step)[] ParamterRanges =>
             new[]
                 {
-                    (5.0, 15.0, 1.0),
+                    (5, 15, 1.0),
                     (40.0, 60.0, 1.0), 
                     (180.0, 220.0, 2.0),
-                    (15.0, 25.0, 1), 
+                    (15.0, 25.0, 1),
+                    
                 };
 
         protected override bool IsEntry(int index)
@@ -82,7 +83,7 @@
                 /*(this.FastEntry[index + 2] < this.SlowEntry[index + 2]) && */
                 /*this.FastEntry[index + 1] < this.SlowEntry[index + 1] && (this.FastEntry[index] > this.SlowEntry[index])*/
                 //this.signal[index + 1] > this.macd[index + 1] && (this.signal[index] < this.macd[index]) &&
-                //(this.macd[index] < this.Symbol.Close[index] * 0.01)
+                (this.macd[index] < this.Symbol.Close[index] * 0.01) &&
                 this.signal[index] < this.macd[index] && this.FastExit[index] > this.SlowExit[index])
             {
                 return true;
@@ -187,7 +188,7 @@
             //(this.macd, this.signal) = Indicators.MACD(this.Symbol, SourceType.Close, 20, 50, 9);
             //(this.shortStop, this.longStop) = Indicators.ELSZ(this.Symbol, 20, 2.5);
 
-            (this.macd, this.signal) = Indicators.MACD(this.Symbol, SourceType.Close, Convert.ToInt32(this.Parameters[1]), Convert.ToInt32(this.Parameters[2]), Convert.ToInt32(this.Parameters[3]));
+            (this.macd, this.signal) = Indicators.MACD(this.Symbol, SourceType.Close, Convert.ToInt32(this.Parameters[1]), Convert.ToInt32(this.Parameters[2]), Convert.ToInt32(this.Parameters[3]), MovingAverage.SMA);
 
             this.FastExit = this.smas[Convert.ToInt32(this.Parameters[3])];
             this.SlowExit = this.smas[Convert.ToInt32(this.Parameters[1])];

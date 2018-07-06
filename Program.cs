@@ -66,44 +66,42 @@
             Trace.Indent();
 
             // Single
-            Parallel.ForEach(symbols.Values, symbol =>
-            {
-                //var symbol = symbols["DE0005439004"];
-                if (symbol.TimeSeries.Count < 1000)
-                {
-                    Trace.TraceInformation($"{symbol.CompanyName} [{symbol.ISIN}] fas too few data points");
-                    return;
-                }
+            //Parallel.ForEach(
+            //    symbols.Values,
+            //    symbol =>
+                    {
+                        var symbol = symbols["DE0005439004"];
+                        if (symbol.TimeSeries.Count < 1000)
+                        {
+                            Trace.TraceInformation($"{symbol.CompanyName} [{symbol.ISIN}] has too few data points");
+                            return;
+                        }
 
-                
-                var sw = Stopwatch.StartNew();
-            var learnSeries = symbol.TimeSeries.Skip(symbol.TimeSeries.Count * 2 / 3).ToArray();
-            var validationSeries = symbol.TimeSeries.Take(symbol.TimeSeries.Count * 2 / 3).ToArray();
-            symbol.TimeSeries = learnSeries;
+                        var sw = Stopwatch.StartNew();
+                        var learnSeries = symbol.TimeSeries.Skip(symbol.TimeSeries.Count * 1 / 3).ToArray();
+                        var validationSeries = symbol.TimeSeries.Take(symbol.TimeSeries.Count * 1 / 3).ToArray();
+                        symbol.TimeSeries = learnSeries;
 
-            var singleOptimizer = new SingleOptimizer(new SimpleEvaluator(symbol), 13.0 / 25.0); // 13€ per 2500€ 
-            var singleResult = singleOptimizer.Run();
-            // var singleResult = new SimpleEvaluator(symbol).Evaluate(13.0 / 25.0);
-            if (singleResult != null)
-            {
-                var duration = sw.ElapsedMilliseconds;
-                Trace.TraceInformation($"Optimization finished after {duration}ms for {singleResult}");
+                        //var singleResult = new SingleOptimizer(new SimpleEvaluator(symbol), 13.0 / 25.0).Run(); // 13€ per 2500€ 
+                        var singleResult = new SingleLearning(symbol, 13.0 / 25.0).Learn(new FeatureExtractor(learnSeries)).Apply();
+                        
+                        // var singleResult = new SimpleEvaluator(symbol).Evaluate(13.0 / 25.0);
+                        if (singleResult != null)
+                        {
+                            var duration = sw.ElapsedMilliseconds;
+                            Trace.TraceInformation($"Optimization finished after {duration}ms for {singleResult}");
 
-                singleResult.Save("LearningResults", duration);
+                            singleResult.Save("LearningResults", duration);
 
-                // validate results
-                symbol = symbol.CreateCopyShell();
-                symbol.TimeSeries = validationSeries;
-                var validationEvaluator = new SimpleEvaluator(symbol);
-                singleResult = validationEvaluator.Evaluate(singleResult.Parameters, 13.0 / 25.0);
-                singleResult.Save("ValidationResults", duration);
-                    ImageCreator.Save(
-                        symbol,
-                        singleResult,
-                        validationEvaluator.CurveData,
-                        "ValidationResults");
-                }
-            });
+                            // validate results
+                            symbol = symbol.CreateCopyShell();
+                            symbol.TimeSeries = validationSeries;
+                            var validationEvaluator = new SimpleEvaluator(symbol);
+                            singleResult = validationEvaluator.Evaluate(singleResult.Parameters, 13.0 / 25.0);
+                            singleResult.Save("ValidationResults", duration);
+                            ImageCreator.Save(symbol, singleResult, validationEvaluator.CurveData, "ValidationResults");
+                        }
+                    }//);
 
             // Multi
             //var swm = Stopwatch.StartNew();

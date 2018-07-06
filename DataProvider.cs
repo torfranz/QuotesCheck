@@ -46,7 +46,7 @@
                         throw;
                     }
 
-                    Thread.Sleep(500);
+                    Thread.Sleep(2000);
                     retry++;
                 }
             }

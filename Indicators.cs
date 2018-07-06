@@ -1,12 +1,25 @@
 ﻿namespace QuotesCheck
 {
     using System;
+    using System.Collections.Generic;
     using System.Diagnostics;
 
     using MathNet.Numerics.Statistics;
 
+    internal enum MovingAverage
+    {
+        SMA, EMA, DEMA, TEMA
+    }
+
     internal static class Indicators
     {
+        private static Dictionary<MovingAverage, Func<double[], int, double[]>> maFuncs = new Dictionary<MovingAverage, Func<double[], int, double[]>>{
+            {MovingAverage.SMA, SMA},
+            {MovingAverage.EMA, EMA},
+            {MovingAverage.DEMA, DEMA},
+            {MovingAverage.TEMA, TEMA},
+
+        };
         public static double[] EMA(SymbolInformation symbol, SourceType sourceType, int period)
         {
             return EMA(symbol.Data(sourceType), period);
@@ -47,9 +60,9 @@
             return WMA(symbol.Data(sourceType), period);
         }
 
-        public static (double[] MACD, double[] Signal) MACD(SymbolInformation symbol, SourceType sourceType, int fastPeriod, int slowPeriod, int signalPeriod)
+        public static (double[] MACD, double[] Signal) MACD(SymbolInformation symbol, SourceType sourceType, int fastPeriod, int slowPeriod, int signalPeriod, MovingAverage movingAverage = MovingAverage.EMA)
         {
-            return MACD(symbol.Data(sourceType), fastPeriod, slowPeriod, signalPeriod);
+            return MACD(symbol.Data(sourceType), fastPeriod, slowPeriod, signalPeriod, movingAverage);
         }
 
         public static double[] TEMA(SymbolInformation symbol, SourceType sourceType, int period)
@@ -951,25 +964,25 @@
             return wma;
         }
 
-        private static (double[] MACD, double[] Signal) MACD(double[] data, int fastPeriod, int slowPeriod, int signalPeriod)
+        private static (double[] MACD, double[] Signal) MACD(double[] data, int fastPeriod, int slowPeriod, int signalPeriod, MovingAverage movingAverag)
         {
             // macd = ema(close, p1) - ema(close, p2)
             // signal = ema(macd, pS)
 
             var macd = Create(data.Length);
 
-            var emaFast = EMA(data, fastPeriod);
-            var emaSlow = EMA(data, slowPeriod);
+            var maFast = maFuncs[movingAverag](data, fastPeriod);
+            var maSlow = maFuncs[movingAverag](data, slowPeriod);
 
             // macd
             for (var index = data.Length - 1; index >= 0; index--)
             {
-                macd[index] = emaFast[index] - emaSlow[index];
-                macd[index] = emaFast[index] - emaSlow[index];
+                macd[index] = maFast[index] - maSlow[index];
+                macd[index] = maFast[index] - maSlow[index];
             }
 
             Debug.Assert(macd.Length == data.Length);
-            return (macd, EMA(macd, signalPeriod));
+            return (macd, maFuncs[movingAverag](macd, signalPeriod));
         }
 
         public static double[] TEMA(double[] data, int period)

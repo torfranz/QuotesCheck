@@ -97,7 +97,7 @@
             return this;
         }
 
-        internal EvaluationResult Apply()
+        internal EvaluationResult Apply(FeatureExtractor featureExtractor)
         {
             return null;
         }

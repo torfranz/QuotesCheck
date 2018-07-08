@@ -14,23 +14,25 @@
             this.Close = series.Select(item => item.Close).ToArray();
             this.Open = series.Select(item => item.Open).ToArray();
 
-            this.Ema20 = Indicators.EMA(this.Close, 20);
-            this.Ema50 = Indicators.EMA(this.Close, 50);
-            this.Ema200 = Indicators.EMA(this.Close, 200);
+            this.Ema20 = Indicators.EMA(this.Close, 20).Scale(-1.0, 1.0);
+            this.Ema50 = Indicators.EMA(this.Close, 50).Scale(-1.0, 1.0);
+            this.Ema200 = Indicators.EMA(this.Close, 200).Scale(-1.0, 1.0);
+            this.RSI = Indicators.RSI(this.Close, 14).Scale(-1.0, 1.0);
+            (this.MACD, this.Signal) = Indicators.MACD(this.Close, 50, 200, 20, MovingAverage.EMA);
 
             var features = new List<(TimeSeries series, double[] features, int label)>();
             
-            for (var idx = series.Count - 1; idx >= 50; idx--)
+            for (var idx = series.Count - 20; idx >= 50; idx--)
             {
                 // features
-                var diffEma20_50 = Helper.Delta(this.Ema20[idx], this.Ema50[idx]);
-                var diffEma50_200 = Helper.Delta(this.Ema50[idx], this.Ema200[idx]);
-                var diffEma20_Close = Helper.Delta(this.Ema20[idx], this.Close[idx]);
-                
+                var rsi = this.RSI[idx];
+                var macd = this.MACD[idx];
+                var signal = this.Signal[idx];
+
                 // output
                 var label = this.FindLabel(this.Open[idx - 1], idx - 1, 50, -5, 10);
 
-                features.Add((series[idx], new[] { diffEma20_50, diffEma50_200, diffEma20_Close }, label));
+                features.Add((series[idx], new[] { rsi, macd, signal }, label));
             }
 
             this.Features = features.ToArray();
@@ -53,6 +55,12 @@
 
             return 0;
         }
+
+        public double[] MACD { get; }
+
+        public double[] Signal { get; }
+
+        public double[] RSI { get; }
 
         public double[] High { get; }
 

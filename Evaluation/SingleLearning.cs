@@ -1,5 +1,6 @@
 ﻿namespace QuotesCheck.Evaluation
 {
+    using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
@@ -37,7 +38,7 @@
         internal SingleLearning Save(string folder)
         {
             Debug.Assert(this.network != null);
-
+            Directory.CreateDirectory(folder);
             this.network.Save(this.BuildFilePath(folder));
             return this;
         }
@@ -48,7 +49,7 @@
             Debug.Assert(inputs.Length > 0);
             var inputsCount = inputs[0].Length;
             
-            var outputs = Jagged.OneHot(featureExtractor.Features.Select(item => item.label).ToArray());
+            var outputs =  featureExtractor.Features.Select(item => new double[] { item.label }).ToArray();
             Debug.Assert(outputs.Length > 0);
             var outputsCount = outputs[0].Length;
 
@@ -58,7 +59,7 @@
                 this.network = new ActivationNetwork(
                     new BipolarSigmoidFunction(),
                     inputsCount,
-                    (inputsCount + outputsCount) / 2,
+                    (inputsCount + outputsCount),
                     outputsCount);
                 
                 // Randomly initialize the network
@@ -70,28 +71,26 @@
             }
 
             // Teach the network using parallel Rprop:
-            var teacher = new ParallelResilientBackpropagationLearning(this.network);
+            var teacher = new ResilientBackpropagationLearning(network);
 
-            var errors = new List<double>();
-            var epoch = 0;
-            var error = double.MaxValue;
-            while (true)
+            // Iterate until stop criteria is met
+            double error = teacher.RunEpoch(inputs, outputs);
+            double previous;
+
+            do
             {
-                var newError = teacher.RunEpoch(inputs, outputs);
-                if (error - newError < 0.01)
-                {
-                    break;
-                }
+                previous = error;
 
-                error = newError;
-                errors.Add(error);
-                epoch++;
-            }
-            
+                // Compute one learning iteration
+                error = teacher.RunEpoch(inputs, outputs);
+
+            } while (Math.Abs(previous - error) > 0.0000000001 * previous);
+
             // Checks if the network has learned
+            var answers = new List<(int, double)>();
             for (var i = 0; i < inputs.Length; i++)
             {
-                var answer = this.network.Compute(inputs[i]);
+                answers.Add((featureExtractor.Features[i].label, this.network.Compute(inputs[i])[0]));
             }
 
             return this;

@@ -964,7 +964,7 @@
             return wma;
         }
 
-        private static (double[] MACD, double[] Signal) MACD(double[] data, int fastPeriod, int slowPeriod, int signalPeriod, MovingAverage movingAverag)
+        public static (double[] MACD, double[] Signal) MACD(double[] data, int fastPeriod, int slowPeriod, int signalPeriod, MovingAverage movingAverag)
         {
             // macd = ema(close, p1) - ema(close, p2)
             // signal = ema(macd, pS)
@@ -1061,7 +1061,7 @@
             return mom;
         }
 
-        private static double[] RSI(double[] data, int n)
+        public static double[] RSI(double[] data, int n)
         {
             // # input
             // n = integer("Period", 14)
@@ -1089,7 +1089,7 @@
                 upSmoothed[index] = up * w + (1 - w) * nn(upSmoothed.At(index + 1));
                 downSmoothed[index] = down * w + (1 - w) * nn(downSmoothed.At(index + 1));
 
-                rsi[index] = 100.0 - 100.0 / (1 + upSmoothed[index] / downSmoothed[index]);
+                rsi[index] =  nn(100.0 - 100.0 / (1 + upSmoothed[index] / downSmoothed[index]));
             }
 
             Debug.Assert(rsi.Length == data.Length);

@@ -125,7 +125,7 @@
                 trendDown[index] = close.At(index + 1) < trendDown.At(index + 1) ? Math.Min(down, trendDown.At(index + 1)) : down;
                 trend[index] = close[index] > trendDown.At(index + 1) ? 1 : (close[index] < trendUp.At(index + 1) ? -1 : trend.At(index + 1, 1));
 
-                st[index] = trend[index] == 1 ? trendUp[index] : trendDown[index];
+                st[index] = nn((trend[index] == 1 ? trendUp[index] : trendDown[index]), close[index]);
             }
 
             return st;

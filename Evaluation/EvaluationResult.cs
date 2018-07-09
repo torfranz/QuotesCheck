@@ -19,6 +19,15 @@
             this.Parameters = parameters;
         }
 
+        public EvaluationResult(string companyName, string isin, double buyAndHoldGain)
+        {
+            this.CompanyName = companyName;
+            this.ISIN = isin;
+            this.BuyAndHoldGain = buyAndHoldGain;
+            this.Performance = new PerformanceMeasure(this.Trades);
+            this.IdealPerformance = new PerformanceMeasure(this.IdealTrades);
+        }
+
         [JsonConverter(typeof(DoubleJsonConverter))]
         public double BuyAndHoldGain { get; }
 

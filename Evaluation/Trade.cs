@@ -1,6 +1,7 @@
 ﻿namespace QuotesCheck.Evaluation
 {
     using System;
+    using System.Collections.Generic;
 
     using Newtonsoft.Json;
 
@@ -46,6 +47,12 @@
 
             return curve;
         }
+
+        [JsonIgnore]
+        public List<double> UpperBoundCurve { get; } = new List<double>();
+
+        [JsonIgnore]
+        public List<double> LowerBoundCurve { get; } = new List<double>();
 
         public override string ToString()
         {

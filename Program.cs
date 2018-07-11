@@ -5,7 +5,6 @@
     using System.Globalization;
     using System.Linq;
     using System.Threading;
-    using System.Threading.Tasks;
 
     using QuotesCheck.Evaluation;
 
@@ -70,7 +69,9 @@
             //    symbols.Values,
             //    symbol =>
             {
-                var symbol = symbols["DE0005557508"];
+                //var symbol = symbols["DE0005557508"]; // Telekom
+                var symbol = symbols["DE0007037129"]; // RWE
+
                 if (symbol.TimeSeries.Count < 1000)
                 {
                     Trace.TraceInformation($"{symbol.CompanyName} [{symbol.ISIN}] has too few data points");
@@ -78,36 +79,31 @@
                 }
 
                 var sw = Stopwatch.StartNew();
-                var learnSeries = symbol.TimeSeries.Skip(symbol.TimeSeries.Count * 1 / 3).ToArray();
-                var validationSeries = symbol.TimeSeries.Take(symbol.TimeSeries.Count * 1 / 3).ToArray();
-                
-                //var singleResult = new SingleOptimizer(new SimpleEvaluator(symbol), 13.0 / 25.0).Run(); // 13€ per 2500€ 
-                var lerner = new SingleLearning(new FeatureExtractor(symbol), 13.0 / 25.0);
-                var singleResult = lerner.Load("networks").Learn()/*.Save("networks")*/.Apply();
-                
-                // var singleResult = new SimpleEvaluator(symbol).Evaluate(13.0 / 25.0);
-                if (singleResult != null)
-                {
-                    var duration = sw.ElapsedMilliseconds;
-                    Trace.TraceInformation($"Optimization finished after {duration}ms for {singleResult}");
 
-                    singleResult.Save("LearningResults", duration);
+                //var singleResult = new SingleOptimizer(new SimpleEvaluator(symbol), 13.0 / 25.0).Run(); // 13€ per 2500€ 
+                for (int i = 0; i < 10; i++)
+                {
+                    var lerner = new SingleLearning(new FeatureExtractor(symbol), 13.0 / 25.0);
+                    var singleResult = lerner /*.Load("Networks", $"_{i}")*/.Learn().Save("Networks", $"_{i}").Apply();
+                    singleResult.Save("LearningResults", sw.ElapsedMilliseconds);
+                    //ImageCreator.Save(symbol, singleResult, lerner.CurveData, "LearningResults");
 
                     // validate results
-                    //singleResult = lerner.Validate();
-                    //singleResult.Save("ValidationResults", duration);
-                    //ImageCreator.Save(symbol, singleResult, validationEvaluator.CurveData, "ValidationResults");
-
-                    /*
-                    symbol = symbol.CreateCopyShell();
-                    symbol.TimeSeries = validationSeries;
-                    var validationEvaluator = new SimpleEvaluator(symbol);
-                    singleResult = validationEvaluator.Evaluate(singleResult.Parameters, 13.0 / 25.0);
-                    singleResult.Save("ValidationResults", duration);
-                    ImageCreator.Save(symbol, singleResult, validationEvaluator.CurveData, "ValidationResults");
-                    */
+                    singleResult = lerner.Validate();
+                    singleResult.Save("ValidationResults", 0);
+                    //ImageCreator.Save(symbol, singleResult, lerner.CurveData, "ValidationResults");
                 }
-            }//);
+
+
+                /*
+                symbol = symbol.CreateCopyShell();
+                symbol.TimeSeries = validationSeries;
+                var validationEvaluator = new SimpleEvaluator(symbol);
+                singleResult = validationEvaluator.Evaluate(singleResult.Parameters, 13.0 / 25.0);
+                singleResult.Save("ValidationResults", duration);
+                ImageCreator.Save(symbol, singleResult, validationEvaluator.CurveData, "ValidationResults");
+                */
+            } //);
 
             // Multi
             //var swm = Stopwatch.StartNew();

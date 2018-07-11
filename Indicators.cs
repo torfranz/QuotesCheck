@@ -8,18 +8,26 @@
 
     internal enum MovingAverage
     {
-        SMA, EMA, DEMA, TEMA
+        SMA,
+
+        EMA,
+
+        DEMA,
+
+        TEMA
     }
 
     internal static class Indicators
     {
-        private static Dictionary<MovingAverage, Func<double[], int, double[]>> maFuncs = new Dictionary<MovingAverage, Func<double[], int, double[]>>{
-            {MovingAverage.SMA, SMA},
-            {MovingAverage.EMA, EMA},
-            {MovingAverage.DEMA, DEMA},
-            {MovingAverage.TEMA, TEMA},
+        private static readonly Dictionary<MovingAverage, Func<double[], int, double[]>> maFuncs =
+            new Dictionary<MovingAverage, Func<double[], int, double[]>>
+                {
+                    { MovingAverage.SMA, SMA },
+                    { MovingAverage.EMA, EMA },
+                    { MovingAverage.DEMA, DEMA },
+                    { MovingAverage.TEMA, TEMA },
+                };
 
-        };
         public static double[] EMA(SymbolInformation symbol, SourceType sourceType, int period)
         {
             return EMA(symbol.Data(sourceType), period);
@@ -60,7 +68,13 @@
             return WMA(symbol.Data(sourceType), period);
         }
 
-        public static (double[] MACD, double[] Signal) MACD(SymbolInformation symbol, SourceType sourceType, int fastPeriod, int slowPeriod, int signalPeriod, MovingAverage movingAverage = MovingAverage.EMA)
+        public static (double[] MACD, double[] Signal) MACD(
+            SymbolInformation symbol,
+            SourceType sourceType,
+            int fastPeriod,
+            int slowPeriod,
+            int signalPeriod,
+            MovingAverage movingAverage = MovingAverage.EMA)
         {
             return MACD(symbol.Data(sourceType), fastPeriod, slowPeriod, signalPeriod, movingAverage);
         }
@@ -125,7 +139,7 @@
                 trendDown[index] = close.At(index + 1) < trendDown.At(index + 1) ? Math.Min(down, trendDown.At(index + 1)) : down;
                 trend[index] = close[index] > trendDown.At(index + 1) ? 1 : (close[index] < trendUp.At(index + 1) ? -1 : trend.At(index + 1, 1));
 
-                st[index] = nn((trend[index] == 1 ? trendUp[index] : trendDown[index]), close[index]);
+                st[index] = nn(trend[index] == 1 ? trendUp[index] : trendDown[index], close[index]);
             }
 
             return st;
@@ -353,9 +367,9 @@
                     diM += Math.Max(high.At(index + i) <= high.At(index + i + 1) ? low.At(index + i + 1) - low.At(index + i) : 0, 0);
                 }
 
-                diPlus[index] = diP / tr[index] * 100;
-                diMinus[index] = diM / tr[index] * 100;
-                dmi[index] = Math.Abs((diPlus[index] - diMinus[index]) / (diPlus[index] + diMinus[index])) * 100;
+                diPlus[index] = nn(diP / tr[index] * 100);
+                diMinus[index] = nn(diM / tr[index] * 100);
+                dmi[index] = nn(Math.Abs((diPlus[index] - diMinus[index]) / (diPlus[index] + diMinus[index])) * 100);
             }
 
             return (dmi, diPlus, diMinus);
@@ -611,7 +625,7 @@
             for (var index = close.Length - 1; index >= 0; index--)
             {
                 var denom = highest[index] - lowest[index];
-                obos[index] = (close[index] - lowest[index]) / denom * 100;
+                obos[index] = nn((close[index] - lowest[index]) / denom * 100);
             }
 
             return obos;
@@ -733,6 +747,169 @@
             return KAMA(symbol.Data(sourceType), length);
         }
 
+        public static double[] EMA(double[] data, int period)
+        {
+            // wf = 2 / (n + 1)
+            // ema = nn(ema[1], close) + wf * nn(close - ema[1], 0)
+
+            var wf = 2.0 / (period + 1);
+
+            var ema = Create(data.Length);
+
+            // EMA(t) = ((Close(t) – EMA(t-1)) * Ew(t)) + EMA(t-1)
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                var ema1 = nn(ema.At(index + 1), data[index]);
+                ema[index] = (data[index] - ema1) * wf + ema1;
+            }
+
+            Debug.Assert(ema.Length == data.Length);
+            return ema;
+        }
+
+        public static double[] SMA(double[] data, int period)
+        {
+            // sma = nn(sma[1], 0) + (close / n) - nn(close[n] / n, 0)
+            var sma = Create(data.Length);
+
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                sma[index] = nn(sma.At(index + 1)) + data[index] / period - nn(data.At(index + period) / period);
+            }
+
+            Debug.Assert(sma.Length == data.Length);
+            return sma;
+        }
+
+        public static double[] DEMA(double[] data, int period)
+        {
+            // dema = 2*ema(close, n) - ema(ema(close, n), n)
+
+            var ema1 = EMA(data, period);
+            var ema2 = EMA(ema1, period);
+
+            var dema = Create(data.Length);
+
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                dema[index] = 2 * ema1[index] - ema2[index];
+            }
+
+            Debug.Assert(dema.Length == data.Length);
+            return dema;
+        }
+
+        public static double[] Distance(double[] data1, double[] data2)
+        {
+            Debug.Assert(data1.Length == data2.Length);
+            var distance = Create(data1.Length);
+
+            // macd
+            for (var index = data1.Length - 1; index >= 0; index--)
+            {
+                distance[index] = data1[index] - data2[index];
+            }
+
+            return distance;
+        }
+
+        public static double[] Ratio(double[] data1, double[] data2)
+        {
+            Debug.Assert(data1.Length == data2.Length);
+            var ratio = Create(data1.Length);
+
+            for (var index = data1.Length - 1; index >= 0; index--)
+            {
+                ratio[index] = data1[index] / data2[index];
+            }
+
+            return ratio;
+        }
+
+        public static double[] RelativeDistance(double[] data1, double[] data2)
+        {
+            Debug.Assert(data1.Length == data2.Length);
+            var relativeDistance = Create(data1.Length);
+
+            // macd
+            for (var index = data1.Length - 1; index >= 0; index--)
+            {
+                relativeDistance[index] = (data1[index] - data2[index]) / data2[index];
+            }
+
+            return relativeDistance;
+        }
+
+        public static (double[] MACD, double[] Signal) MACD(double[] data, int fastPeriod, int slowPeriod, int signalPeriod, MovingAverage movingAverag)
+        {
+            // macd = ema(close, p1) - ema(close, p2)
+            // signal = ema(macd, pS)
+
+            var maFast = maFuncs[movingAverag](data, fastPeriod);
+            var maSlow = maFuncs[movingAverag](data, slowPeriod);
+
+            var macd = Distance(maFast, maSlow);
+
+            return (macd, maFuncs[movingAverag](macd, signalPeriod));
+        }
+
+        public static double[] TEMA(double[] data, int period)
+        {
+            // ema1 = ema(close, n)
+            // ema2 = ema(ema1, n)
+            // ema3 = ema(ema2, n)
+            // tema = 3 * ema1 - 3 * ema2 + ema3
+
+            var ema1 = EMA(data, period);
+            var ema2 = EMA(ema1, period);
+            var ema3 = EMA(ema2, period);
+
+            var tema = Create(data.Length);
+
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                tema[index] = 3 * ema1[index] - 3 * ema2[index] + ema3[index];
+            }
+
+            Debug.Assert(tema.Length == data.Length);
+            return tema;
+        }
+
+        public static double[] RSI(double[] data, int n)
+        {
+            // # input
+            // n = integer("Period", 14)
+
+            // # calculation
+            // w = 1 / n
+
+            // up = close > close[1] ? close - close[1] : 0
+            // down = close > close[1] ? 0 : close[1] - close
+
+            // upSmoothed = up * w + (1 - w) * nn(upSmoothed[1], 0)
+            // downSmoothed = down * w + (1 - w) * nn(downSmoothed[1], 0)
+
+            // rsi = 100 - (100 / ((1 + upSmoothed / downSmoothed)))
+
+            var w = 1.0 / n;
+            var rsi = Create(data.Length);
+            var upSmoothed = Create(data.Length);
+            var downSmoothed = Create(data.Length);
+
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                var up = data[index] > data.At(index + 1) ? data[index] - data.At(index + 1) : 0;
+                var down = data[index] > data.At(index + 1) ? 0 : data.At(index + 1) - data[index];
+                upSmoothed[index] = up * w + (1 - w) * nn(upSmoothed.At(index + 1));
+                downSmoothed[index] = down * w + (1 - w) * nn(downSmoothed.At(index + 1));
+
+                rsi[index] = nn(100.0 - 100.0 / (1 + upSmoothed[index] / downSmoothed[index]));
+            }
+
+            Debug.Assert(rsi.Length == data.Length);
+            return rsi;
+        }
+
         private static double[] AROUp(double[] data, int period)
         {
             // aroonUp = 100 * (n - offsetHighest(high, n)) / n
@@ -801,58 +978,6 @@
             }
 
             return tr;
-        }
-
-        public static double[] EMA(double[] data, int period)
-        {
-            // wf = 2 / (n + 1)
-            // ema = nn(ema[1], close) + wf * nn(close - ema[1], 0)
-
-            var wf = 2.0 / (period + 1);
-
-            var ema = Create(data.Length);
-
-            // EMA(t) = ((Close(t) – EMA(t-1)) * Ew(t)) + EMA(t-1)
-            for (var index = data.Length - 1; index >= 0; index--)
-            {
-                var ema1 = nn(ema.At(index + 1), data[index]);
-                ema[index] = (data[index] - ema1) * wf + ema1;
-            }
-
-            Debug.Assert(ema.Length == data.Length);
-            return ema;
-        }
-
-        public static double[] SMA(double[] data, int period)
-        {
-            // sma = nn(sma[1], 0) + (close / n) - nn(close[n] / n, 0)
-            var sma = Create(data.Length);
-
-            for (var index = data.Length - 1; index >= 0; index--)
-            {
-                sma[index] = nn(sma.At(index + 1)) + data[index] / period - nn(data.At(index + period) / period);
-            }
-
-            Debug.Assert(sma.Length == data.Length);
-            return sma;
-        }
-
-        public static double[] DEMA(double[] data, int period)
-        {
-            // dema = 2*ema(close, n) - ema(ema(close, n), n)
-
-            var ema1 = EMA(data, period);
-            var ema2 = EMA(ema1, period);
-
-            var dema = Create(data.Length);
-
-            for (var index = data.Length - 1; index >= 0; index--)
-            {
-                dema[index] = 2 * ema1[index] - ema2[index];
-            }
-
-            Debug.Assert(dema.Length == data.Length);
-            return dema;
         }
 
         private static double Median(double[] data, int startIndex, int length)
@@ -964,49 +1089,6 @@
             return wma;
         }
 
-        public static (double[] MACD, double[] Signal) MACD(double[] data, int fastPeriod, int slowPeriod, int signalPeriod, MovingAverage movingAverag)
-        {
-            // macd = ema(close, p1) - ema(close, p2)
-            // signal = ema(macd, pS)
-
-            var macd = Create(data.Length);
-
-            var maFast = maFuncs[movingAverag](data, fastPeriod);
-            var maSlow = maFuncs[movingAverag](data, slowPeriod);
-
-            // macd
-            for (var index = data.Length - 1; index >= 0; index--)
-            {
-                macd[index] = maFast[index] - maSlow[index];
-                macd[index] = maFast[index] - maSlow[index];
-            }
-
-            Debug.Assert(macd.Length == data.Length);
-            return (macd, maFuncs[movingAverag](macd, signalPeriod));
-        }
-
-        public static double[] TEMA(double[] data, int period)
-        {
-            // ema1 = ema(close, n)
-            // ema2 = ema(ema1, n)
-            // ema3 = ema(ema2, n)
-            // tema = 3 * ema1 - 3 * ema2 + ema3
-
-            var ema1 = EMA(data, period);
-            var ema2 = EMA(ema1, period);
-            var ema3 = EMA(ema2, period);
-
-            var tema = Create(data.Length);
-
-            for (var index = data.Length - 1; index >= 0; index--)
-            {
-                tema[index] = 3 * ema1[index] - 3 * ema2[index] + ema3[index];
-            }
-
-            Debug.Assert(tema.Length == data.Length);
-            return tema;
-        }
-
         private static double[] DIX(double[] data, int period)
         {
             // n = integer("Period", 28)
@@ -1061,42 +1143,7 @@
             return mom;
         }
 
-        public static double[] RSI(double[] data, int n)
-        {
-            // # input
-            // n = integer("Period", 14)
-
-            // # calculation
-            // w = 1 / n
-
-            // up = close > close[1] ? close - close[1] : 0
-            // down = close > close[1] ? 0 : close[1] - close
-
-            // upSmoothed = up * w + (1 - w) * nn(upSmoothed[1], 0)
-            // downSmoothed = down * w + (1 - w) * nn(downSmoothed[1], 0)
-
-            // rsi = 100 - (100 / ((1 + upSmoothed / downSmoothed)))
-
-            var w = 1.0 / n;
-            var rsi = Create(data.Length);
-            var upSmoothed = Create(data.Length);
-            var downSmoothed = Create(data.Length);
-
-            for (var index = data.Length - 1; index >= 0; index--)
-            {
-                var up = data[index] > data.At(index + 1) ? data[index] - data.At(index + 1) : 0;
-                var down = data[index] > data.At(index + 1) ? 0 : data.At(index + 1) - data[index];
-                upSmoothed[index] = up * w + (1 - w) * nn(upSmoothed.At(index + 1));
-                downSmoothed[index] = down * w + (1 - w) * nn(downSmoothed.At(index + 1));
-
-                rsi[index] =  nn(100.0 - 100.0 / (1 + upSmoothed[index] / downSmoothed[index]));
-            }
-
-            Debug.Assert(rsi.Length == data.Length);
-            return rsi;
-        }
-
-        private static double[] VOLA(double[] data, int period, int periodYear)
+        public static double[] VOLA(double[] data, int period, int periodYear)
         {
             // # input
             // n = integer("Period", 30)
@@ -1121,7 +1168,7 @@
             {
                 var mC = Sum(dC, index, period) / period;
                 var xC = Sum(dC, index, period, summand => Math.Pow(summand, 2)) - 2 * Sum(dC, index, period) * mC + period * Math.Pow(mC, 2);
-                vola[index] = Math.Sqrt(periodYear * xC / (period - 1));
+                vola[index] = nn(Math.Sqrt(periodYear * xC / (period - 1)));
             }
 
             Debug.Assert(vola.Length == data.Length);
@@ -1279,7 +1326,7 @@
                 var nefRatio = nSignal[index] / nNoise;
                 var nSmooth = Math.Pow(nefRatio * (nFastend - nSlowend) + nSlowend, 2);
 
-                kama[index] = nn(kama.At(index + 1)) + nSmooth * (xPrice[index] - nn(kama.At(index + 1)));
+                kama[index] = nn(nn(kama.At(index + 1)) + nSmooth * (xPrice[index] - nn(kama.At(index + 1))), xPrice[index]);
             }
 
             Debug.Assert(kama.Length == data.Length);

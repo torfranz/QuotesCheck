@@ -114,23 +114,31 @@
                         buySellCurve.Line.Width = 3;
                         buySellCurve.Line.Style = DashStyle.Dot;
 
-                        // Stop-Loss
-                        var stopLossCurve = pane.AddCurve(
-                            $"Stop-Loss {result.Parameters[0]:F1}%",
+                        // Lower/Upper bound curve
+                        var lowerBoundCurve = pane.AddCurve(
+                            "Lower Bound",
+                            new double[] { },
+                            new double[] { },
+                            Color.FloralWhite,
+                            SymbolType.None);
+                        var upperBoundCurve = pane.AddCurve(
+                            "Upper Bound",
                             new double[] { },
                             new double[] { },
                             Color.FloralWhite,
                             SymbolType.None);
 
-                        stopLossCurve.Line.Width = 5;
-                        stopLossCurve.Line.IsAntiAlias = true;
-                        var stopLoss = trade.GetStopLossCurve(symbol, result.Parameters[0]);
-                        for (var i = trade.BuyIndex - 1; i > trade.SellIndex; i--)
+                        lowerBoundCurve.Line.Width = 5;
+                        lowerBoundCurve.Line.IsAntiAlias = true;
+                        upperBoundCurve.Line.Width = 5;
+                        upperBoundCurve.Line.IsAntiAlias = true;
+                        for (var i = trade.BuyIndex; i > trade.SellIndex; i--)
                         {
                             var series = symbol.TimeSeries[i];
                             var day = new XDate(series.Day);
 
-                            stopLossCurve.AddPoint(day, stopLoss[trade.BuyIndex - i]);
+                            lowerBoundCurve.AddPoint(day, trade.LowerBoundCurve[trade.BuyIndex - i]);
+                            upperBoundCurve.AddPoint(day, trade.UpperBoundCurve[trade.BuyIndex - i]);
                         }
 
                         // axis settings

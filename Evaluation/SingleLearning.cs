@@ -18,14 +18,19 @@
 
         private readonly SymbolInformation symbol;
 
-        private readonly ActivationNetwork[] networks;
+        private readonly ActivationNetwork[][] networks; // [learnSeries][features]
 
         internal SingleLearning(FeatureExtractor featureExtractor, double costOfTrades)
         {
             this.costOfTrades = costOfTrades;
             this.featureExtractor = featureExtractor;
             this.symbol = featureExtractor.Symbol;
-            this.networks = new ActivationNetwork[this.featureExtractor.LearnSeries[0].featureSets.Count];
+            this.networks = new ActivationNetwork[this.featureExtractor.LearnSeries.Length][];
+
+            for (var i = 0; i < this.networks.Length; i++)
+            {
+                this.networks[i] = new ActivationNetwork[featureExtractor.LearnSeries[0][0].features.Length];
+            }
         }
 
         public IList<(string Name, double[] Values, bool IsLine, bool IsDot)> CurveData =>
@@ -37,12 +42,15 @@
 
         internal SingleLearning Load(string folder, string postFix)
         {
-            for (var i = 0; i < this.networks.Length; i++)
+            for (var laernRangeIdx = 0; laernRangeIdx < this.networks.Length; laernRangeIdx++)
             {
-                var filePath = this.BuildFilePath(folder, $"_N{i}{postFix}");
-                if (File.Exists(filePath))
+                for (var featureIdx = 0; featureIdx < this.networks[0].Length; featureIdx++)
                 {
-                    this.networks[i] = Network.Load(filePath) as ActivationNetwork;
+                    var filePath = this.BuildFilePath(folder, $"_L{laernRangeIdx}_F{featureIdx}{postFix}");
+                    if (File.Exists(filePath))
+                    {
+                        this.networks[laernRangeIdx][featureIdx] = Network.Load(filePath) as ActivationNetwork;
+                    }
                 }
             }
 
@@ -51,11 +59,14 @@
 
         internal SingleLearning Save(string folder, string postFix)
         {
-            for (var i = 0; i < this.networks.Length; i++)
+            for (var learnRangeIdx = 0; learnRangeIdx < this.networks.Length; learnRangeIdx++)
             {
-                Debug.Assert(this.networks[i] != null);
-                Directory.CreateDirectory(folder);
-                this.networks[i].Save(this.BuildFilePath(folder, $"_N{i}{postFix}"));
+                for (var featureIdx = 0; featureIdx < this.networks[0].Length; featureIdx++)
+                {
+                    Debug.Assert(this.networks[learnRangeIdx] != null);
+                    Directory.CreateDirectory(folder);
+                    this.networks[learnRangeIdx][featureIdx].Save(this.BuildFilePath(folder, $"_L{learnRangeIdx}_F{featureIdx}{postFix}"));
+                }
             }
 
             return this;
@@ -63,37 +74,47 @@
 
         internal SingleLearning Learn(int? hiddenLayerCount = null, bool relearn = false)
         {
-            for (var nIndex = 0; nIndex < this.networks.Length; nIndex++)
+            for (var learnRangeIdx = 0; learnRangeIdx < this.networks.Length; learnRangeIdx++)
             {
-                var network = this.networks[nIndex];
-                this.Learn(
-                    ref network,
-                    this.featureExtractor.LearnSeries.Select(item => item.featureSets[nIndex]).ToArray(),
-                    hiddenLayerCount,
-                    relearn);
+                for (var featureIdx = 0; featureIdx < this.networks[0].Length; featureIdx++)
+                {
+                    var network = this.networks[learnRangeIdx][featureIdx];
+                    this.Learn(
+                        ref network,
+                        this.featureExtractor.LearnSeries[learnRangeIdx].Select(item => item.features[featureIdx]).ToArray(),
+                        this.featureExtractor.LearnLabels[learnRangeIdx],
+                        hiddenLayerCount,
+                        relearn);
 
-                this.networks[nIndex] = network;
+                    this.networks[learnRangeIdx][featureIdx] = network;
+                }
             }
 
             return this;
         }
 
-        internal EvaluationResult Apply()
+        internal EvaluationResult[] Apply()
         {
-            return this.CreateResult(this.featureExtractor.LearnSeries);
+            var results = new EvaluationResult[this.featureExtractor.LearnSeries.Length];
+            for (var learnRangeIdx = 0; learnRangeIdx < this.networks.Length; learnRangeIdx++)
+            {
+                results[learnRangeIdx] = this.CreateResult(this.featureExtractor.LearnSeries[learnRangeIdx], learnRangeIdx);
+            }
+
+            return results;
         }
 
         internal EvaluationResult Validate()
         {
-            return this.CreateResult(this.featureExtractor.ValidationSeries);
+            return this.CreateResult(this.featureExtractor.ValidationSeries, 0);
         }
 
-        private void Learn(ref ActivationNetwork network, double[][] inputs, int? hiddenLayerCount = null, bool relearn = false)
+        private void Learn(ref ActivationNetwork network, double[][] inputs, int[] labels, int? hiddenLayerCount = null, bool relearn = false)
         {
             Debug.Assert(inputs.Length > 0);
             var inputsCount = inputs[0].Length;
 
-            var outputs = Jagged.OneHot(this.featureExtractor.LearnLabels);
+            var outputs = Jagged.OneHot(labels);
             Debug.Assert(outputs.Length > 0);
             var outputsCount = outputs[0].Length;
 
@@ -140,7 +161,7 @@
             {
                 var computed = network.Compute(inputs[i]).ArgMax();
 
-                var given = this.featureExtractor.LearnLabels[i];
+                var given = labels[i];
 
                 if (given == 0)
                 {
@@ -194,7 +215,7 @@
             var acc = (tp + tn) / (tp + tn + fp + fn);
         }
 
-        private EvaluationResult CreateResult((int seriesIdx, TimeSeries series, IList<double[]> featureSet)[] series)
+        private EvaluationResult CreateResult((int seriesIdx, TimeSeries series, double[][] features)[] series, int iteration)
         {
             var startIndex = series[0].seriesIdx;
             var endIndex = series[series.Length - 1].seriesIdx;
@@ -202,6 +223,7 @@
                 this.symbol.CompanyName,
                 this.symbol.ISIN,
                 Helper.Delta(this.symbol.Open[endIndex - 1], this.symbol.Open[startIndex - 1]));
+            result.Iteration = iteration;
 
             Trade trade = null;
 
@@ -210,12 +232,17 @@
             for (var i = 0; i < series.Length; i++)
             {
                 var sum = 0.0;
-                for (var nIndex = 0; nIndex < this.networks.Length; nIndex++)
+                var networkCount = 0;
+                for (var learnRangeIndex = 0; learnRangeIndex < this.networks.Length; learnRangeIndex++)
                 {
-                    sum += this.networks[nIndex].Compute(series[i].featureSet[nIndex]).ArgMax();
+                    for (var featureIndex = 0; featureIndex < this.networks[0].Length; featureIndex++)
+                    {
+                        sum += this.networks[learnRangeIndex][featureIndex].Compute(series[i].features[featureIndex]).ArgMax();
+                        networkCount++;
+                    }
                 }
 
-                var label = Convert.ToInt32(sum / this.networks.Length);
+                var label = Convert.ToInt32(sum / networkCount);
 
                 var seriesItem = series[i];
                 if ((trade == null) && (label == 1))

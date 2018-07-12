@@ -78,19 +78,20 @@
                     return;
                 }
 
-                var sw = Stopwatch.StartNew();
-
                 //var singleResult = new SingleOptimizer(new SimpleEvaluator(symbol), 13.0 / 25.0).Run(); // 13€ per 2500€ 
                 for (int i = 0; i < 10; i++)
                 {
                     var lerner = new SingleLearning(new FeatureExtractor(symbol), 13.0 / 25.0);
-                    var singleResult = lerner /*.Load("Networks", $"_{i}")*/.Learn().Save("Networks", $"_{i}").Apply();
-                    singleResult.Save("LearningResults", sw.ElapsedMilliseconds);
-                    //ImageCreator.Save(symbol, singleResult, lerner.CurveData, "LearningResults");
+                    foreach(var result in lerner /*.Load("Networks", $"_{i}")*/.Learn().Save("Networks", $"_{i}").Apply())
+                    {
+                        result.Save("LearningResults");
+                        //ImageCreator.Save(symbol, singleResult, lerner.CurveData, "LearningResults");
+                    }
+
 
                     // validate results
-                    singleResult = lerner.Validate();
-                    singleResult.Save("ValidationResults", 0);
+                    var  singleResult = lerner.Validate();
+                    singleResult.Save("ValidationResults");
                     //ImageCreator.Save(symbol, singleResult, lerner.CurveData, "ValidationResults");
                 }
 

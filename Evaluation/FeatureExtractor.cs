@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
 
+    using Accord;
     using Accord.Math;
 
     internal class FeatureExtractor
@@ -11,8 +12,15 @@
 
         private double[] KAMA;
 
-        public FeatureExtractor(SymbolInformation symbol)
+        public FeatureExtractor(SymbolInformation symbol, int timeSlices = 3)
         {
+            this.LearnSeries = new (int seriesIdx, TimeSeries series, double[][] features)[timeSlices][];
+            this.LearnLabels = new int[timeSlices][];
+            var validationSeries = new List<(int, TimeSeries, double[][])>();
+            var testSeries = new List<(int, TimeSeries, double[][])>();
+            var learnSeries = new List<(int, TimeSeries, double[][])>[timeSlices];
+            var learnLabels = new List<int>[timeSlices];
+
             this.Symbol = symbol;
             this.High = symbol.High;
             this.Low = symbol.Low;
@@ -24,16 +32,11 @@
             this.Ema20 = Indicators.EMA(symbol, SourceType.Close, 20);
             this.Ema50 = Indicators.EMA(symbol, SourceType.Close, 50);
             this.Ema200 = Indicators.EMA(symbol, SourceType.Close, 200);
-            this.RSI = Indicators.RSI(this.Close, 14).Scale(0, 100, -1.0, 1);
+            this.RSI = Indicators.RSI(this.Close, 50).Scale(0, 100, -1.0, 1);
 
             //this.KAMA = Indicators.KAMA(symbol, SourceType.Close, 50);
             this.ST = Indicators.ST(symbol, 50, 3);
             (this.MACD, this.Signal) = Indicators.MACD(this.Close, 50, 200, 20, MovingAverage.EMA);
-
-            var learnSeries = new List<(int, TimeSeries, IList<double[]>)>();
-            var learnLabels = new List<int>();
-            var validationSeries = new List<(int, TimeSeries, IList<double[]>)>();
-            var testSeries = new List<(int, TimeSeries, IList<double[]>)>();
 
             var Ema20_50 = Indicators.RelativeDistance(this.Ema20, this.Ema50).Scale(-0.20, 0.20, -1.0, 1);
             var Ema50_200 = Indicators.RelativeDistance(this.Ema50, this.Ema200).Scale(-0.20, 0.20, -1.0, 1);
@@ -52,9 +55,28 @@
             diMinus = diMinus.Scale(0, 100, -1.0, 1);
 
             var startIndex = symbol.TimeSeries.Count - 20;
+
+            // ranges
+            var fullLearningRange = new IntRange(Convert.ToInt32(0.4 * startIndex), startIndex);
+            var validationRange = new IntRange(Convert.ToInt32(0.2 * startIndex), Convert.ToInt32(0.4 * startIndex));
+            var testRange = new IntRange(0, Convert.ToInt32(0.2 * startIndex));
+
+            var learnRanges = new IntRange[timeSlices];
+            for (var idx = 0; idx < timeSlices; idx++)
+            {
+                var overlappingSliceLength = fullLearningRange.Length / (timeSlices - 0);
+                var sliceLength = fullLearningRange.Length / timeSlices;
+                var sliceStart = fullLearningRange.Min + idx * (sliceLength - (overlappingSliceLength - sliceLength) / (timeSlices - 0));
+                var sliceEnd = sliceStart + overlappingSliceLength;
+                learnRanges[idx] = new IntRange(sliceStart, sliceEnd);
+                learnSeries[idx] = new List<(int, TimeSeries, double[][])>();
+                learnLabels[idx] = new List<int>();
+            }
+
             for (var idx = startIndex; idx > 0; idx--)
             {
                 // features
+                var dayOfWeek = Convert.ToInt32(days[idx].DayOfWeek).Scale(0, 6, 1.0, 1);
                 var season = Math.Abs(6.5 - days[idx].Month).Scale(0.5, 5.5, 1.0, 1);
                 var rsi = this.RSI[idx];
                 var ema20_50 = Ema20_50[idx];
@@ -66,32 +88,40 @@
                 var intradayGain = Helper.Delta(this.Close[idx], this.Open[idx]).Scale(-10.0, 10, -1.0, 1);
                 var todaysGain = Helper.Delta(this.Close[idx], this.Close[idx + 1]).Scale(-10.0, 10, -1.0, 1);
                 var todaysVolumeGain = Helper.Delta(this.Volume[idx], this.Volume[idx + 1]).Scale(-20.0, 20, -1.0, 1);
-                
-                var featureSet = new List<double[]>
-                                     {
-                                         new[] { ema20_50, ema50_200, ema50_Close, macd_Close, signal_Macd},
-                                         //new[] { macd_Close, signal_Macd, dmi[idx], diPlus[idx], diMinus[idx]},
-                                         new[] { obos[idx], st_Close, bullish[idx], bearish[idx] },
-                                     };
+
+                var features = new[]
+                                   {
+                                       new[] { rsi, ema20_50, ema50_200, ema50_Close, signal_Macd, st_Close, bullish[idx] },
+                                       new[] { dayOfWeek, season, intradayGain, todaysGain, todaysVolumeGain }
+                                   };
 
                 // decide if the data point goes to learning, validation or test
-                if (idx > 0.6 * startIndex)
+                for (var sliceIdx = 0; sliceIdx < timeSlices; sliceIdx++)
                 {
-                    learnSeries.Add((idx, symbol.TimeSeries[idx], featureSet));
-                    learnLabels.Add(this.FindLabel(this.Open[idx - 1], idx - 1));
+                    if (learnRanges[sliceIdx].IsInside(idx))
+                    {
+                        learnSeries[sliceIdx].Add((idx, symbol.TimeSeries[idx], features));
+                        learnLabels[sliceIdx].Add(this.FindLabel(this.Open[idx - 1], idx - 1));
+                    }
                 }
-                else if (idx > 0.4 * startIndex)
+
+                if (validationRange.IsInside(idx))
                 {
-                    validationSeries.Add((idx, symbol.TimeSeries[idx], featureSet));
+                    validationSeries.Add((idx, symbol.TimeSeries[idx], features));
                 }
-                else
+
+                if (testRange.IsInside(idx))
                 {
-                    testSeries.Add((idx, symbol.TimeSeries[idx], featureSet));
+                    testSeries.Add((idx, symbol.TimeSeries[idx], features));
                 }
             }
 
-            this.LearnSeries = learnSeries.ToArray();
-            this.LearnLabels = learnLabels.ToArray();
+            for (var idx = 0; idx < timeSlices; idx++)
+            {
+                this.LearnLabels[idx] = learnLabels[idx].ToArray();
+                this.LearnSeries[idx] = learnSeries[idx].ToArray();
+            }
+
             this.ValidationSeries = validationSeries.ToArray();
             this.TestSeries = testSeries.ToArray();
         }
@@ -126,13 +156,13 @@
 
         public double[] Ema200 { get; }
 
-        public (int seriesIdx, TimeSeries series, IList<double[]> featureSets)[] LearnSeries { get; }
+        public (int seriesIdx, TimeSeries series, double[][] features)[][] LearnSeries { get; }
 
-        public int[] LearnLabels { get; }
+        public int[][] LearnLabels { get; }
 
-        public (int seriesIdx, TimeSeries series, IList<double[]> featureSets)[] ValidationSeries { get; }
+        public (int seriesIdx, TimeSeries series, double[][] features)[] ValidationSeries { get; }
 
-        public (int seriesIdx, TimeSeries series, IList<double[]> featureSets)[] TestSeries { get; }
+        public (int seriesIdx, TimeSeries series, double[][] features)[] TestSeries { get; }
 
         private int FindLabel(double startValue, int startIndex)
         {

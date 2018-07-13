@@ -80,6 +80,8 @@
 
                 var tester = new WalkForwardTester(new Model(symbol, new Learner(), 13.0 / 25));
                 var result = tester.Evaluate(1000, 250, symbol.TimeSeries.Count - 20);
+                //var result = tester.Model.EvaluateModelValidity();
+                result.Save("ValidationResults");
 
                 //var singleResult = new SingleOptimizer(new SimpleEvaluator(symbol), 13.0 / 25.0).Run(); // 13€ per 2500€ 
                 for (var i = 0; i < 10; i++)

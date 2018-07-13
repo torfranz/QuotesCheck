@@ -31,7 +31,7 @@
 
         public int CandleCount { get; set; } = 50;
 
-        public IndexedFeaturesAndTarget[][] GenerateFeatureSets(IntRange range, bool createTargets)
+        private IndexedFeaturesAndTarget[][] GenerateFeatureSets(IntRange range, bool createTargets)
         {
             var High = this.Symbol.High;
             var Low = this.Symbol.Low;
@@ -69,7 +69,7 @@
             var indexedFeatures = new IndexedFeaturesAndTarget[2][];
             for (var i = 0; i < indexedFeatures.Length; i++)
             {
-                indexedFeatures[i] = new IndexedFeaturesAndTarget[range.Length];
+                indexedFeatures[i] = new IndexedFeaturesAndTarget[range.Length + 1];
             }
 
             for (var idx = range.Min; idx <= range.Max; idx++)
@@ -90,7 +90,7 @@
 
                 var target = createTargets ? this.GetTargetValue(this.Symbol.Open[idx - 1], idx - 1) : default(int?);
 
-                indexedFeatures[0][idx] = new IndexedFeaturesAndTarget
+                indexedFeatures[0][idx - range.Min] = new IndexedFeaturesAndTarget
                                               {
                                                   Index = idx,
                                                   Target = target,
@@ -100,7 +100,7 @@
                                                                      bullish[idx]
                                                                  }
                                               };
-                indexedFeatures[1][idx] = new IndexedFeaturesAndTarget
+                indexedFeatures[1][idx - range.Min] = new IndexedFeaturesAndTarget
                                               {
                                                   Index = idx,
                                                   Target = target,
@@ -114,8 +114,6 @@
         public void Learn(IntRange range)
         {
             var featureSets = this.GenerateFeatureSets(range, true);
-            Debug.Assert(featureSets.Length > 0);
-
             var featureSetsCount = featureSets.Length;
             Debug.Assert(featureSetsCount > 0);
 
@@ -128,39 +126,42 @@
             }
         }
 
-        public IndexedTarget[] Apply(IntRange range)
+        public TargetResult Apply(IntRange range)
         {
             var featureSets = this.GenerateFeatureSets(range, false);
-            Debug.Assert(featureSets.Length > 0);
-
+            
             var featureSetsCount = featureSets.Length;
             Debug.Assert(featureSetsCount > 0);
             Debug.Assert(featureSetsCount == this.Networks.Length);
 
-            var targets = new IndexedTarget[range.Length];
+            var result = new TargetResult(range);
 
             for (var idx = range.Min; idx <= range.Max; idx++)
             {
                 var sum = 0.0;
                 for (var featureIdx = 0; featureIdx < featureSetsCount; featureIdx++)
                 {
-                    var features = featureSets[featureIdx][idx];
+                    var indexedFeatures = featureSets[featureIdx][idx - range.Min];
+                    Debug.Assert(indexedFeatures.Index == idx);
+
                     var network = this.Networks[featureIdx];
-                    sum += network.Compute(features.Features).ArgMax();
+                    sum += network.Compute(indexedFeatures.Features).ArgMax();
                 }
 
-                targets[idx] = new IndexedTarget { Index = idx, Target = Convert.ToInt32(sum / featureSetsCount) };
+                result.Targets[idx - range.Min] = new IndexedTarget { Index = idx, Target = Convert.ToInt32(sum / featureSetsCount) };
             }
 
-            return targets;
+            return result;
         }
 
-        public EvaluationResult CreateResult(int[] targets, int startIndex, int endIndex = 0)
+        public EvaluationResult CreateResult(TargetResult targetResult)
         {
+            var startIndex = targetResult.Range.Max;
+            var endIndex = targetResult.Range.Min;
             var result = new EvaluationResult(
                 this.Symbol.CompanyName,
                 this.Symbol.ISIN,
-                Helper.Delta(this.Symbol.Open[endIndex - 1], this.Symbol.Open[startIndex - 1]));
+                Helper.Delta(this.Symbol.Close[endIndex], this.Symbol.Open[startIndex - 1]));
 
             Trade trade = null;
 
@@ -168,9 +169,10 @@
             double lowerBound = 0;
             for (var i = startIndex; i >= endIndex; i--)
             {
-                var label = targets[i];
+                var target = targetResult.Targets[i - targetResult.Range.Min];
+                Debug.Assert(target.Index == i);
 
-                if ((trade == null) && (label == 1))
+                if ((trade == null) && (target.Target == 1))
                 {
                     trade = new Trade
                                 {
@@ -192,7 +194,7 @@
                     var close = this.Symbol.Close[i];
 
                     // is this day also expecting more gains, adapt upper and lower for followng days based on todays close
-                    if (label == 1)
+                    if (target.Target == 1)
                     {
                         upperBound = Math.Max(upperBound, (1 + this.UpperBound / 100.0) * close);
                         lowerBound = Math.Max(lowerBound, (1 + this.LowerBound / 100.0) * close);
@@ -209,7 +211,7 @@
                         trade.SellValue = this.Symbol.Open[i - 1];
                         trade.SellDate = this.Symbol.Day[i - 1];
 
-                        this.SetHighestValueForTrade(this.Symbol, trade);
+                        this.SetHighestValueForTrade(trade);
 
                         trade = null;
                     }
@@ -223,10 +225,22 @@
                 trade.SellIndex = endIndex;
                 trade.SellValue = this.Symbol.Close[endIndex];
                 trade.SellDate = this.Symbol.Day[endIndex];
-                this.SetHighestValueForTrade(this.Symbol, trade);
+                this.SetHighestValueForTrade(trade);
             }
 
             return result;
+        }
+
+        public EvaluationResult EvaluateModelValidity()
+        {
+            var range = new IntRange(this.CandleCount, this.Symbol.TimeSeries.Count - this.CandleCount);
+            var targets = this.GenerateFeatureSets(range, true)[0];
+            var result = new TargetResult(range);
+            targets.Select(item => new IndexedTarget { Index = item.Index, Target = item.Target.GetValueOrDefault() }).ToArray().CopyTo(result.Targets);
+            
+            Debug.Assert(result.Targets[0].Index == range.Min);
+            Debug.Assert(result.Targets[result.Range.Length].Index == range.Max);
+            return this.CreateResult(result);
         }
 
         private int GetTargetValue(double startValue, int startIndex)
@@ -247,12 +261,12 @@
             return 0;
         }
 
-        private void SetHighestValueForTrade(SymbolInformation symbol, Trade trade)
+        private void SetHighestValueForTrade(Trade trade)
         {
             double max = 0;
             for (var i = trade.SellIndex; i < trade.BuyIndex; i++)
             {
-                max = Math.Max(max, symbol.Open[i]);
+                max = Math.Max(max, this.Symbol.Open[i]);
             }
 
             trade.HighestValue = max;

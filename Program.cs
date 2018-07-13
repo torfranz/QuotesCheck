@@ -78,7 +78,7 @@
                     return;
                 }
 
-                var tester = new WalkForwardTester(symbol, new FeatureCreator(), new LabelCreator(), new Learning(), new ResultCreator(13.0 / 25));
+                var tester = new WalkForwardTester(new Model(symbol, new Learner(), 13.0 / 25));
                 var result = tester.Evaluate(1000, 250, symbol.TimeSeries.Count - 20);
 
                 //var singleResult = new SingleOptimizer(new SimpleEvaluator(symbol), 13.0 / 25.0).Run(); // 13€ per 2500€ 

@@ -1,13 +1,26 @@
 ﻿namespace QuotesCheck.Evaluation
 {
     using System;
-    using System.Collections.Generic;
 
     using Accord;
     using Accord.Math;
 
     internal class FeatureCreator
     {
+        public int[] Volume { get; set; }
+
+        public double[] MACD { get; private set; }
+
+        public double[] Signal { get; private set; }
+
+        public double[] RSI { get; private set; }
+
+        public double[] Ema20 { get; private set; }
+
+        public double[] Ema50 { get; private set; }
+
+        public double[] Ema200 { get; private set; }
+
         public double[][][] GenerateFeatures(SymbolInformation symbol, IntRange range)
         {
             var High = symbol.High;
@@ -70,21 +83,5 @@
 
             return indexedFeatures;
         }
-
-        public int[] Volume { get; set; }
-        
-        public double[] MACD { get; private set; }
-
-        public double[] Signal { get; private set; }
-
-        public double[] RSI { get; private set; }
-
-       public double[] Ema20 { get; private set; }
-
-        public double[] Ema50 { get; private set; }
-
-        public double[] Ema200 { get; private set; }
-
-        
     }
 }

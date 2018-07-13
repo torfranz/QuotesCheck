@@ -42,7 +42,7 @@
         {
             this.tp = Indicators.TP(symbol);
             this.psar = Indicators.PSAR(this.Symbol, 0.02, 0.02, 0.2);
-            
+
             for (var i = 1; i <= 250; i++)
             {
                 this.emas[i] = Indicators.EMA(symbol, SourceType.Close, i);
@@ -55,8 +55,6 @@
                 //this.temas[i] = Indicators.TEMA(this.tp, i);
                 //this.smas[i] = Indicators.SMA(this.tp, i);
             }
-
-            
         }
 
         public override string Name => "Simple Evaluator";
@@ -68,23 +66,35 @@
         public override double[] StartingParamters => new[] { 10, 50.0, 200, 20, /*0.01, 0.03*/ };
 
         public override (double Lower, double Upper, double Step)[] ParamterRanges =>
+            new[] { (5, 15, 1.0), (40.0, 60.0, 1.0), (180.0, 220.0, 2.0), (15.0, 25.0, 1), };
+
+        public override IList<(string Name, double[] Values, bool IsLine, bool IsDot)> CurveData =>
             new[]
                 {
-                    (5, 15, 1.0),
-                    (40.0, 60.0, 1.0), 
-                    (180.0, 220.0, 2.0),
-                    (15.0, 25.0, 1),
-                    
+                    ($"SMA {Convert.ToInt32(this.Parameters[1])}", this.smas[Convert.ToInt32(this.Parameters[1])], true, false),
+                    ($"SMA {Convert.ToInt32(this.Parameters[2])}", this.emas[Convert.ToInt32(this.Parameters[2])], true, false),
+                    ($"SMA {Convert.ToInt32(this.Parameters[3])}", this.emas[Convert.ToInt32(this.Parameters[3])], true, false),
+                    //($"SMA {Convert.ToInt32(this.Parameters[4])}",
+                    //    this.smas[Convert.ToInt32(this.Parameters[4])], true, false),
+                    //($"PSAR 0.02, 0.02, 0.2",
+                    //    this.psar, false, true),
+                    //($"SMA 20",
+                    //    this.smas[20], true, false),
+                    //($"SMA 50",
+                    //    this.smas[50], true, false),
+                    //($"SMA 200",
+                    //    this.smas[200], true, false),
+                    //($"TP",this.tp, true, false),
                 };
 
         protected override bool IsEntry(int index)
         {
-            if (/*this.psar[index] < this.Symbol.Close[index] &&*/
+            if ( /*this.psar[index] < this.Symbol.Close[index] &&*/
                 /*(this.FastEntry[index + 2] < this.SlowEntry[index + 2]) && */
                 /*this.FastEntry[index + 1] < this.SlowEntry[index + 1] && (this.FastEntry[index] > this.SlowEntry[index])*/
                 //this.signal[index + 1] > this.macd[index + 1] && (this.signal[index] < this.macd[index]) &&
-                (this.macd[index] < this.Symbol.Close[index] * 0.01) &&
-                this.signal[index] < this.macd[index] && this.FastExit[index] > this.SlowExit[index])
+                (this.macd[index] < this.Symbol.Close[index] * 0.01) && (this.signal[index] < this.macd[index])
+                                                                     && (this.FastExit[index] > this.SlowExit[index]))
             {
                 return true;
             }
@@ -141,9 +151,9 @@
 
         protected override bool IsExit(int index)
         {
-            if (/*(this.FastExit[index + 2] > this.SlowExit[index + 2]) && */
+            if ( /*(this.FastExit[index + 2] > this.SlowExit[index + 2]) && */
                 /*(this.FastExit[index + 1] > this.SlowExit[index + 1]) && (this.FastExit[index] < this.SlowExit[index])*/
-                this.signal[index] > this.macd[index] && this.FastExit[index] < this.SlowExit[index])
+                (this.signal[index] > this.macd[index]) && (this.FastExit[index] < this.SlowExit[index]))
             {
                 return true;
             }
@@ -188,7 +198,13 @@
             //(this.macd, this.signal) = Indicators.MACD(this.Symbol, SourceType.Close, 20, 50, 9);
             //(this.shortStop, this.longStop) = Indicators.ELSZ(this.Symbol, 20, 2.5);
 
-            (this.macd, this.signal) = Indicators.MACD(this.Symbol, SourceType.Close, Convert.ToInt32(this.Parameters[1]), Convert.ToInt32(this.Parameters[2]), Convert.ToInt32(this.Parameters[3]), MovingAverage.SMA);
+            (this.macd, this.signal) = Indicators.MACD(
+                this.Symbol,
+                SourceType.Close,
+                Convert.ToInt32(this.Parameters[1]),
+                Convert.ToInt32(this.Parameters[2]),
+                Convert.ToInt32(this.Parameters[3]),
+                MovingAverage.SMA);
 
             this.FastExit = this.smas[Convert.ToInt32(this.Parameters[3])];
             this.SlowExit = this.smas[Convert.ToInt32(this.Parameters[1])];
@@ -196,27 +212,5 @@
             //this.FastExit = this.smas[Convert.ToInt32(this.Parameters[2])];
             //this.SlowExit = this.smas[Convert.ToInt32(this.Parameters[3])];
         }
-
-        public override IList<(string Name, double[] Values, bool IsLine, bool IsDot)> CurveData =>
-            new[]
-                {
-                    ($"SMA {Convert.ToInt32(this.Parameters[1])}",
-                        this.smas[Convert.ToInt32(this.Parameters[1])], true, false),
-                    ($"SMA {Convert.ToInt32(this.Parameters[2])}",
-                        this.emas[Convert.ToInt32(this.Parameters[2])], true, false),
-                    ($"SMA {Convert.ToInt32(this.Parameters[3])}",
-                        this.emas[Convert.ToInt32(this.Parameters[3])], true, false),
-                    //($"SMA {Convert.ToInt32(this.Parameters[4])}",
-                    //    this.smas[Convert.ToInt32(this.Parameters[4])], true, false),
-                    //($"PSAR 0.02, 0.02, 0.2",
-                    //    this.psar, false, true),
-                    //($"SMA 20",
-                    //    this.smas[20], true, false),
-                    //($"SMA 50",
-                    //    this.smas[50], true, false),
-                    //($"SMA 200",
-                    //    this.smas[200], true, false),
-                    //($"TP",this.tp, true, false),
-                };
     }
 }

@@ -26,6 +26,12 @@
         [JsonConverter(typeof(DateJsonConverter))]
         public DateTime SellDate { get; set; }
 
+        [JsonIgnore]
+        public List<double> UpperBoundCurve { get; } = new List<double>();
+
+        [JsonIgnore]
+        public List<double> LowerBoundCurve { get; } = new List<double>();
+
         [JsonConverter(typeof(DoubleJsonConverter))]
         public double Gain => (this.BuyValue > 0) && (this.SellValue > 0) ? Helper.Delta(this.SellValue, this.BuyValue) - this.CostOfTrades : 0;
 
@@ -33,6 +39,11 @@
         public double PossibleGain => (this.HighestValue > 0) && (this.BuyValue > 0) ? Helper.Delta(this.HighestValue, this.BuyValue) - this.CostOfTrades : 0;
 
         public int Days => (this.SellDate - this.BuyDate).Days;
+
+        public override string ToString()
+        {
+            return $"{this.Gain:F}";
+        }
 
         internal double[] GetStopLossCurve(SymbolInformation symbol, double stopLoss)
         {
@@ -46,17 +57,6 @@
             }
 
             return curve;
-        }
-
-        [JsonIgnore]
-        public List<double> UpperBoundCurve { get; } = new List<double>();
-
-        [JsonIgnore]
-        public List<double> LowerBoundCurve { get; } = new List<double>();
-
-        public override string ToString()
-        {
-            return $"{this.Gain:F}";
         }
     }
 }

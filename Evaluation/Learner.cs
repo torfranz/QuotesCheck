@@ -7,19 +7,8 @@
     using Accord.Neuro;
     using Accord.Neuro.Learning;
 
-    internal class Learning
+    internal class Learner
     {
-        //internal EvaluationResult[] Apply()
-        //{
-        //    var results = new EvaluationResult[this.featureCreator.LearnSeries.Length];
-        //    for (var learnRangeIdx = 0; learnRangeIdx < this.networks.Length; learnRangeIdx++)
-        //    {
-        //        results[learnRangeIdx] = this.CreateResult(this.featureCreator.LearnSeries[learnRangeIdx], learnRangeIdx);
-        //    }
-
-        //    return results;
-        //}
-
         public Network Learn(double[][] features, int[] labels, int? hiddenLayerCount = null)
         {
             Debug.Assert(features.Length > 0);

@@ -26,6 +26,8 @@
 
         public abstract (double Lower, double Upper, double Step)[] ParamterRanges { get; }
 
+        public abstract IList<(string Name, double[] Values, bool IsLine, bool IsDot)> CurveData { get; }
+
         protected double[] Parameters { get; private set; }
 
         internal EvaluationResult Evaluate(double costOfTrades)
@@ -172,7 +174,5 @@
 
             trade.HighestValue = max;
         }
-
-        public abstract IList<(string Name, double[] Values, bool IsLine, bool IsDot)> CurveData { get; }
     }
 }

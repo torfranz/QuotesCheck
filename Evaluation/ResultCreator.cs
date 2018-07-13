@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace QuotesCheck.Evaluation
+﻿namespace QuotesCheck.Evaluation
 {
-    class ResultCreator
+    using System;
+
+    internal class ResultCreator
     {
         public ResultCreator(double costOfTrades)
         {
@@ -14,15 +10,14 @@ namespace QuotesCheck.Evaluation
         }
 
         public double CostOfTrades { get; }
+
         public double UpperBound { get; set; } = 10;
 
         public double LowerBound { get; set; } = -5;
+
         public EvaluationResult CreateResult(SymbolInformation symbol, int[] labels, int startIndex, int endIndex = 0)
         {
-            var result = new EvaluationResult(
-                symbol.CompanyName,
-                symbol.ISIN,
-                Helper.Delta(symbol.Open[endIndex - 1], symbol.Open[startIndex - 1]));
+            var result = new EvaluationResult(symbol.CompanyName, symbol.ISIN, Helper.Delta(symbol.Open[endIndex - 1], symbol.Open[startIndex - 1]));
 
             Trade trade = null;
 
@@ -34,13 +29,7 @@ namespace QuotesCheck.Evaluation
 
                 if ((trade == null) && (label == 1))
                 {
-                    trade = new Trade
-                    {
-                        BuyIndex = i - 1,
-                        BuyValue = symbol.Open[i - 1],
-                        BuyDate = symbol.Day[i - 1],
-                        CostOfTrades = this.CostOfTrades
-                    };
+                    trade = new Trade { BuyIndex = i - 1, BuyValue = symbol.Open[i - 1], BuyDate = symbol.Day[i - 1], CostOfTrades = this.CostOfTrades };
                     result.Trades.Add(trade);
 
                     upperBound = (1 + this.UpperBound / 100.0) * trade.BuyValue;

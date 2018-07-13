@@ -79,6 +79,17 @@
             return MACD(symbol.Data(sourceType), fastPeriod, slowPeriod, signalPeriod, movingAverage);
         }
 
+        public static (double[] MACD, double[] Signal) RelativeMACD(
+            SymbolInformation symbol,
+            SourceType sourceType,
+            int fastPeriod,
+            int slowPeriod,
+            int signalPeriod,
+            MovingAverage movingAverage = MovingAverage.EMA)
+        {
+            return RelativeMACD(symbol.Data(sourceType), fastPeriod, slowPeriod, signalPeriod, movingAverage);
+        }
+
         public static double[] TEMA(SymbolInformation symbol, SourceType sourceType, int period)
         {
             return TEMA(symbol.Data(sourceType), period);
@@ -853,6 +864,18 @@
             return (macd, maFuncs[movingAverag](macd, signalPeriod));
         }
 
+        public static (double[] RelativeMACD, double[] RelativeSignal) RelativeMACD(
+            double[] data,
+            int fastPeriod,
+            int slowPeriod,
+            int signalPeriod,
+            MovingAverage movingAverage)
+        {
+            var (macd, signal) = MACD(data, fastPeriod, slowPeriod, signalPeriod, movingAverage);
+
+            return (Ratio(macd, data), Ratio(signal, data));
+        }
+
         public static double[] TEMA(double[] data, int period)
         {
             // ema1 = ema(close, n)
@@ -908,6 +931,38 @@
 
             Debug.Assert(rsi.Length == data.Length);
             return rsi;
+        }
+
+        public static double[] VOLA(double[] data, int period, int periodYear)
+        {
+            // # input
+            // n = integer("Period", 30)
+            // tp = integer("Periods/year", 250)
+
+            // # calculation
+            // dC = log(close) - log(close[1])
+            // mC = sum(dC, n) / n
+            // xC = sum(pow(dC, 2), n) - 2 * sum(dC, n) * mC + n * pow(mC, 2)
+            // VOLA = sqrt(tp * xC / (n - 1))
+
+            var dC = Create(data.Length);
+
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                dC[index] = Math.Log(data[index]) - Math.Log(data.At(index + 1));
+            }
+
+            var vola = Create(data.Length);
+
+            for (var index = data.Length - 1; index >= 0; index--)
+            {
+                var mC = Sum(dC, index, period) / period;
+                var xC = Sum(dC, index, period, summand => Math.Pow(summand, 2)) - 2 * Sum(dC, index, period) * mC + period * Math.Pow(mC, 2);
+                vola[index] = nn(Math.Sqrt(periodYear * xC / (period - 1)));
+            }
+
+            Debug.Assert(vola.Length == data.Length);
+            return vola;
         }
 
         private static double[] AROUp(double[] data, int period)
@@ -1141,38 +1196,6 @@
 
             Debug.Assert(mom.Length == data.Length);
             return mom;
-        }
-
-        public static double[] VOLA(double[] data, int period, int periodYear)
-        {
-            // # input
-            // n = integer("Period", 30)
-            // tp = integer("Periods/year", 250)
-
-            // # calculation
-            // dC = log(close) - log(close[1])
-            // mC = sum(dC, n) / n
-            // xC = sum(pow(dC, 2), n) - 2 * sum(dC, n) * mC + n * pow(mC, 2)
-            // VOLA = sqrt(tp * xC / (n - 1))
-
-            var dC = Create(data.Length);
-
-            for (var index = data.Length - 1; index >= 0; index--)
-            {
-                dC[index] = Math.Log(data[index]) - Math.Log(data.At(index + 1));
-            }
-
-            var vola = Create(data.Length);
-
-            for (var index = data.Length - 1; index >= 0; index--)
-            {
-                var mC = Sum(dC, index, period) / period;
-                var xC = Sum(dC, index, period, summand => Math.Pow(summand, 2)) - 2 * Sum(dC, index, period) * mC + period * Math.Pow(mC, 2);
-                vola[index] = nn(Math.Sqrt(periodYear * xC / (period - 1)));
-            }
-
-            Debug.Assert(vola.Length == data.Length);
-            return vola;
         }
 
         private static double[] HH(double[] data, int period)

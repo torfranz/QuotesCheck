@@ -78,23 +78,24 @@
                     return;
                 }
 
+                var tester = new WalkForwardTester(symbol, new FeatureCreator(), new LabelCreator(), new Learning(), new ResultCreator(13.0 / 25));
+                var result = tester.Evaluate(1000, 250, symbol.TimeSeries.Count - 20);
+
                 //var singleResult = new SingleOptimizer(new SimpleEvaluator(symbol), 13.0 / 25.0).Run(); // 13€ per 2500€ 
-                for (int i = 0; i < 10; i++)
+                for (var i = 0; i < 10; i++)
                 {
-                    var lerner = new SingleLearning(new FeatureExtractor(symbol), 13.0 / 25.0);
-                    foreach(var result in lerner /*.Load("Networks", $"_{i}")*/.Learn().Save("Networks", $"_{i}").Apply())
-                    {
-                        result.Save("LearningResults");
-                        //ImageCreator.Save(symbol, singleResult, lerner.CurveData, "LearningResults");
-                    }
+                    //var lerner = new SingleLearning(new FeatureExtractor(), 13.0 / 25.0);
+                    //foreach(var result in lerner /*.Load("Networks", $"_{i}")*/.Learn(symbol).Save("Networks", $"_{i}").Apply())
+                    //{
+                    //    result.Save("LearningResults");
+                    //    //ImageCreator.Save(symbol, singleResult, lerner.CurveData, "LearningResults");
+                    //}
 
-
-                    // validate results
-                    var  singleResult = lerner.Validate();
-                    singleResult.Save("ValidationResults");
-                    //ImageCreator.Save(symbol, singleResult, lerner.CurveData, "ValidationResults");
+                    //// validate results
+                    //var  singleResult = lerner.Validate();
+                    //singleResult.Save("ValidationResults");
+                    ////ImageCreator.Save(symbol, singleResult, lerner.CurveData, "ValidationResults");
                 }
-
 
                 /*
                 symbol = symbol.CreateCopyShell();

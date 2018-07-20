@@ -192,6 +192,7 @@
                                     CostOfTrades = this.CostOfTrades
                                 };
                     result.Trades.Add(trade);
+                    result.EquityCurve.Add((trade.BuyDate, equityGain));
 
                     initialTargetUpperBound = targetUpperBound = (1 + indexedTarget.Target) * trade.BuyValue;
                     lowerBound = (1 + this.LowerBound) * trade.BuyValue;
@@ -216,8 +217,8 @@
                         this.SetHighestValueForTrade(trade);
 
                         // equity change for next day sell
-                        equityGain += 100 * Helper.Delta(trade.SellValue, trade.BuyValue);
-                        result.EquityCurve.Add((this.Symbol.Day[i - 1], equityGain));
+                        equityGain += trade.Gain;
+                        result.EquityCurve.Add((trade.SellDate, equityGain));
 
                         trade = null;
                     }
@@ -252,6 +253,10 @@
                 trade.SellValue = this.Symbol.Close[endIndex];
                 trade.SellDate = this.Symbol.Day[endIndex];
                 this.SetHighestValueForTrade(trade);
+
+                // equity change for next day sell
+                equityGain += trade.Gain;
+                result.EquityCurve.Add((trade.SellDate, equityGain));
             }
 
             return result;
@@ -315,8 +320,7 @@
                                                               Target = target,
                                                               Features = new[]
                                                                              {
-                                                                                 rsi, ema20_50, ema50_200, ema50_Close, relMacd,
-                                                                                 elMacd_relSignal, this.bullish[idx]
+                                                                                 rsi, ema20_50, ema50_200, ema50_Close, this.bullish[idx], dayOfWeek, season
                                                                              }
                                                           };
                 //indexedFeatures[1][idx - range.Min] =

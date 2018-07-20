@@ -40,13 +40,13 @@
             pane.Legend.FontSpec.Size = 6;
 
             var curve = pane.AddCurve("% Gain", new double[] { }, new double[] { }, LineColors[0], SymbolType.None);
-            curve.Line.Width = 5;
+            curve.Line.Width = 2;
             curve.Line.IsVisible = true;
             curve.Line.IsAntiAlias = true;
             
-            foreach (var entry in result.EquityCurve)
+            foreach (var (day, equity) in result.EquityCurve)
             {
-                curve.AddPoint(new XDate(entry.Day), entry.Equity);
+                curve.AddPoint(new XDate(day), equity);
             }
 
             pane.XAxis.Type = AxisType.Date;

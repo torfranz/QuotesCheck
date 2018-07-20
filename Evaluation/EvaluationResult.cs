@@ -13,7 +13,7 @@
             this.CompanyName = evaluator.Symbol.CompanyName;
             this.ISIN = evaluator.Symbol.ISIN;
             this.EvaluatorName = evaluator.Name;
-            this.BuyAndHoldGain = buyAndHoldGain;
+            this.BuyAndHoldGain = 100.0 * buyAndHoldGain;
             this.Performance = new PerformanceMeasure(this.Trades);
             this.IdealPerformance = new PerformanceMeasure(this.IdealTrades);
             this.Parameters = parameters;
@@ -23,7 +23,7 @@
         {
             this.CompanyName = companyName;
             this.ISIN = isin;
-            this.BuyAndHoldGain = buyAndHoldGain;
+            this.BuyAndHoldGain = 100.0 * buyAndHoldGain;
             this.Performance = new PerformanceMeasure(this.Trades);
             this.IdealPerformance = new PerformanceMeasure(this.IdealTrades);
         }
@@ -70,5 +70,8 @@
                     $"Evaluation-{this.ISIN} - {this.Iteration} - {this.Performance.TotalGain:F0}% [{this.BuyAndHoldGain:F0}%] +{this.Performance.PositiveTrades} -{this.Performance.NegativeTrades} - {now:yyyy-MM-dd-HH-mm-ss}.json"),
                 this);
         }
+
+        [JsonIgnore]
+        public IList<(DateTime Day, double Equity)> EquityCurve { get; } = new List<(DateTime Day, double Equity)>();
     }
 }

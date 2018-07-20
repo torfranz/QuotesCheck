@@ -69,8 +69,8 @@
             //    symbols.Values,
             //    symbol =>
             {
-                //var symbol = symbols["DE0005557508"]; // Telekom
-                var symbol = symbols["DE0007037129"]; // RWE
+                var symbol = symbols["DE0005557508"]; // Telekom
+                //var symbol = symbols["DE0007037129"]; // RWE
 
                 if (symbol.TimeSeries.Count < 1000)
                 {
@@ -79,9 +79,14 @@
                 }
 
                 var tester = new WalkForwardTester(new Model(symbol, new Learner(), 13.0 / 25));
-                var result = tester.Evaluate(1000, 250, symbol.TimeSeries.Count - 20);
-                //var result = tester.Model.EvaluateModelValidity();
-                result.Save("ValidationResults");
+                var validityResult = tester.Model.EvaluateModelValidity();
+                validityResult.Save("LearningResults");
+                ImageCreator.Save(symbol, validityResult, tester.Model.CurveData, "LearningResults");
+                ImageCreator.SaveEquityCurve(symbol, validityResult, "LearningResults");
+                var evaluationResult = tester.Evaluate(1000, 250, symbol.TimeSeries.Count - 20);
+                evaluationResult.Save("ValidationResults");
+                ImageCreator.Save(symbol, evaluationResult, tester.Model.CurveData, "ValidationResults");
+                ImageCreator.SaveEquityCurve(symbol, evaluationResult, "ValidationResults");
 
                 //var singleResult = new SingleOptimizer(new SimpleEvaluator(symbol), 13.0 / 25.0).Run(); // 13€ per 2500€ 
                 for (var i = 0; i < 10; i++)

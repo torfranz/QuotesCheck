@@ -124,7 +124,7 @@
                 else
                 {
                     // finish if exit criteria met or stop loss value is triggered
-                    if (exits[index] || (parameters[0] + Helper.Delta(this.Symbol.TimeSeries[index].Close, highestClose) < 0))
+                    if (exits[index] || (parameters[0] + 100.0 * Helper.Delta(this.Symbol.TimeSeries[index].Close, highestClose) < 0))
                     {
                         // finish trade
                         this.ExitTrade(activeTrade, index);

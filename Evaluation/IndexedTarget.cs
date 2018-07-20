@@ -4,6 +4,6 @@
     {
         public int Index { get; set; }
 
-        public int Target { get; set; }
+        public double Target { get; set; }
     }
 }

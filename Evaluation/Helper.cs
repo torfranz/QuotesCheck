@@ -13,7 +13,7 @@
 
         public static double Delta(double d1, double d2)
         {
-            return 100.0 * (d1 - d2) / d2;
+            return (d1 - d2) / d2;
         }
 
         public static double Slope(double[] values, int startIndex, int length)

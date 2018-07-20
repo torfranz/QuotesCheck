@@ -1,6 +1,7 @@
 ﻿namespace QuotesCheck.Evaluation
 {
     using System;
+    using System.Linq;
 
     using Accord;
     using Accord.Diagnostics;
@@ -12,14 +13,13 @@
     {
         public DoubleRange ScaleRange => new DoubleRange(-1, 1);
 
-        public Network Learn(double[][] features, int[] labels, int? hiddenLayerCount = null)
+        public Network Learn(double[][] features, double[] targets, int? hiddenLayerCount = null)
         {
             Debug.Assert(features.Length > 0);
             var inputsCount = features[0].Length;
 
-            var outputs = Jagged.OneHot(labels);
-            Debug.Assert(outputs.Length > 0);
-            var outputsCount = outputs[0].Length;
+            var outputs = targets.Select(item => new[]{item}).ToArray();
+            var outputsCount = 1;
 
             // Create an activation network with the function and
             var network = new ActivationNetwork(
@@ -32,8 +32,8 @@
             new NguyenWidrow(network).Randomize();
 
             // Teach the network using parallel Rprop:
-            //var teacher = new ResilientBackpropagationLearning(network);
-            var teacher = new EvolutionaryLearning(network, 100);
+            var teacher = new ResilientBackpropagationLearning(network);
+            //var teacher = new EvolutionaryLearning(network, 100);
 
             // Iterate until stop criteria is met
             var error = teacher.RunEpoch(features, outputs);

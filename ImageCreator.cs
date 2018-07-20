@@ -25,6 +25,59 @@
                 Color.Brown, Color.Beige, Color.Maroon, Color.MintCream, Color.Olive, Color.Coral, Color.Navy
             };
 
+        public static void SaveEquityCurve(
+            SymbolInformation symbol,
+            EvaluationResult result,
+            string folderName)
+        {
+            var pane = new GraphPane();
+            pane.Title.Text = $"Equity Curve";
+            pane.Title.FontSpec.Size = 8;
+            pane.Chart.Fill.IsScaled = false;
+            pane.Chart.Fill.Brush = new SolidBrush(Color.DimGray);
+            pane.Fill.Brush = new SolidBrush(Color.DimGray);
+            pane.Legend.Fill.Brush = new SolidBrush(Color.DimGray);
+            pane.Legend.FontSpec.Size = 6;
+
+            var curve = pane.AddCurve("% Gain", new double[] { }, new double[] { }, LineColors[0], SymbolType.None);
+            curve.Line.Width = 5;
+            curve.Line.IsVisible = true;
+            curve.Line.IsAntiAlias = true;
+            
+            foreach (var entry in result.EquityCurve)
+            {
+                curve.AddPoint(new XDate(entry.Day), entry.Equity);
+            }
+
+            pane.XAxis.Type = AxisType.Date;
+            pane.XAxis.Scale.FontSpec.Size = 6;
+            pane.XAxis.MinorGrid.IsVisible = true;
+            pane.XAxis.MajorGrid.IsVisible = true;
+
+            pane.YAxis.Scale.FontSpec.Size = 6;
+            pane.YAxis.MinorGrid.IsVisible = true;
+            pane.YAxis.MajorGrid.IsVisible = true;
+
+            // force an axischange to plot all data and recalculate all axis
+            // this is normally done by the control, but this is not possible in mvc3
+            var bm = new Bitmap(1, 1);
+            using (var g = Graphics.FromImage(bm))
+            {
+                pane.ReSize(g, new RectangleF(0, 0, 1280 * 5, 960 * 5));
+                pane.AxisChange(g);
+            }
+
+            // create a stream to store a PNG-format image
+            var actualFolder = Path.Combine(folderName, symbol.ISIN);
+            Directory.CreateDirectory(actualFolder);
+            var image = pane.GetImage(true);
+            image.Save(
+                Path.Combine(
+                    actualFolder,
+                    $"EquityCurve.png"),
+                ImageFormat.Png);
+        }
+
         public static void Save(
             SymbolInformation symbol,
             EvaluationResult result,

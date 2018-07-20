@@ -1,6 +1,7 @@
 ﻿namespace QuotesCheck.Evaluation
 {
     using System;
+    using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
 
@@ -105,13 +106,16 @@
 
         public Network[] Networks { get; private set; }
 
-        public double UpperBound { get; set; } = 10;
+        public double UpperBound { get; set; } = 0.10;
 
-        public double LowerBound { get; set; } = -5;
+        public double LowerBound { get; set; } = -0.05;
 
-        public int CandleCount { get; set; } = 50;
+        public int CandleCount { get; set; } = 20;
 
         public int FeatureSetsCount => 1;
+
+        public IList<(string Name, double[] Values, bool IsLine, bool IsDot)> CurveData =>
+            new[] { ($"Ema200", this.Ema200, true, false), ($"Ema50", this.Ema50, true, false), ($"Ema20", this.Ema20, true, false), };
 
         public void Learn(IntRange range)
         {
@@ -147,10 +151,10 @@
                     Debug.Assert(indexedFeatures.Index == idx);
 
                     var network = this.Networks[featureIdx];
-                    sum += network.Compute(indexedFeatures.Features).ArgMax();
+                    sum += network.Compute(indexedFeatures.Features)[0];
                 }
 
-                result.Targets[idx - range.Min] = new IndexedTarget { Index = idx, Target = Convert.ToInt32(sum / featureSetsCount) };
+                result.Targets[idx - range.Min] = new IndexedTarget { Index = idx, Target = sum / featureSetsCount };
             }
 
             return result;
@@ -167,14 +171,18 @@
 
             Trade trade = null;
 
-            double upperBound = 0;
+            double targetUpperBound = 0;
+            double initialTargetUpperBound = 0;
             double lowerBound = 0;
+            double equityGain = 0;
+            result.EquityCurve.Add((this.Symbol.Day[startIndex], equityGain));
+
             for (var i = startIndex; i >= endIndex; i--)
             {
-                var target = targetResult.Targets[i - targetResult.Range.Min];
-                Debug.Assert(target.Index == i);
+                var indexedTarget = targetResult.Targets[i - targetResult.Range.Min];
+                Debug.Assert(indexedTarget.Index == i);
 
-                if ((trade == null) && (target.Target == 1))
+                if ((trade == null) && (indexedTarget.Target > this.UpperBound))
                 {
                     trade = new Trade
                                 {
@@ -185,29 +193,21 @@
                                 };
                     result.Trades.Add(trade);
 
-                    upperBound = (1 + this.UpperBound / 100.0) * trade.BuyValue;
-                    lowerBound = (1 + this.LowerBound / 100.0) * trade.BuyValue;
+                    initialTargetUpperBound = targetUpperBound = (1 + indexedTarget.Target) * trade.BuyValue;
+                    lowerBound = (1 + this.LowerBound) * trade.BuyValue;
 
                     trade.LowerBoundCurve.Add(lowerBound);
-                    trade.UpperBoundCurve.Add(upperBound);
+                    trade.UpperBoundCurve.Add(targetUpperBound);
                 }
                 else if (trade != null)
                 {
                     var close = this.Symbol.Close[i];
 
-                    // is this day also expecting more gains, adapt upper and lower for followng days based on todays close
-                    if (target.Target == 1)
-                    {
-                        upperBound = Math.Max(upperBound, (1 + this.UpperBound / 100.0) * close);
-                        lowerBound = Math.Max(lowerBound, (1 + this.LowerBound / 100.0) * close);
-                    }
-
-                    // set lower/upper bound for next day
-                    trade.LowerBoundCurve.Add(lowerBound);
-                    trade.UpperBoundCurve.Add(upperBound);
+                    // equity change for this day compared to buy
+                    result.EquityCurve.Add((this.Symbol.Day[i], 100 * Helper.Delta(close, trade.BuyValue) + equityGain));
 
                     // did the close leave the lowerBound -> upperBound range, close the trade on next day open
-                    if ((close >= upperBound) || (close <= lowerBound))
+                    if ((close >= targetUpperBound) || (close <= lowerBound))
                     {
                         trade.SellIndex = i - 1;
                         trade.SellValue = this.Symbol.Open[i - 1];
@@ -215,7 +215,31 @@
 
                         this.SetHighestValueForTrade(trade);
 
+                        // equity change for next day sell
+                        equityGain += 100 * Helper.Delta(trade.SellValue, trade.BuyValue);
+                        result.EquityCurve.Add((this.Symbol.Day[i - 1], equityGain));
+
                         trade = null;
+                    }
+                    else
+                    {
+                        // is this day also expecting more gains, adapt upper and lower for following days
+                        var newTargetUpperBound = (1 + indexedTarget.Target) * close;
+                        if (newTargetUpperBound > targetUpperBound)
+                        {
+                            lowerBound += newTargetUpperBound - targetUpperBound;
+                            targetUpperBound = newTargetUpperBound;
+                        }
+
+                        // in case close reached the minimum upper bound, take this as new lower bound
+                        if (close >= 0.9999 * initialTargetUpperBound)
+                        {
+                            lowerBound = Math.Max(initialTargetUpperBound, lowerBound);
+                        }
+
+                        // set lower/upper bound for next day
+                        trade.LowerBoundCurve.Add(lowerBound);
+                        trade.UpperBoundCurve.Add(targetUpperBound);
                     }
                 }
             }
@@ -235,7 +259,7 @@
 
         public EvaluationResult EvaluateModelValidity()
         {
-            var range = new IntRange(this.CandleCount, this.Symbol.TimeSeries.Count - this.CandleCount);
+            var range = new IntRange(this.CandleCount + 1, this.Symbol.TimeSeries.Count - this.CandleCount);
             var targets = this.GenerateFeatureSets(range, true)[0];
             var result = new TargetResult(range);
             targets.Select(item => new IndexedTarget { Index = item.Index, Target = item.Target.GetValueOrDefault() }).ToArray().CopyTo(result.Targets);
@@ -279,11 +303,11 @@
                 var relMacd = this.RelativeMACD[idx];
                 var relSignal = this.RelativeSignal[idx];
                 var elMacd_relSignal = this.Scale(Helper.Delta(relSignal, relMacd), -0.05, 0.05);
-                var intradayGain = this.Scale(Helper.Delta(this.Close[idx], this.Open[idx]), -10.0, 10);
-                var todaysGain = this.Scale(Helper.Delta(this.Close[idx], this.Close[idx + 1]), -10.0, 10);
-                var todaysVolumeGain = this.Scale(Helper.Delta(this.Volume[idx], this.Volume[idx + 1]), -20.0, 20);
+                var intradayGain = this.Scale(Helper.Delta(this.Close[idx], this.Open[idx]), -0.10, 0.10);
+                var todaysGain = this.Scale(Helper.Delta(this.Close[idx], this.Close[idx + 1]), -0.10, 0.10);
+                var todaysVolumeGain = this.Scale(Helper.Delta(this.Volume[idx], this.Volume[idx + 1]), -0.20, 0.20);
 
-                var target = createTargets ? this.GetTargetValue(this.Symbol.Open[idx - 1], idx - 1) : default(int?);
+                var target = createTargets ? this.GetTargetValue(this.Symbol.Open[idx - 1], idx - 1) : default(double?);
 
                 indexedFeatures[0][idx - range.Min] = new IndexedFeaturesAndTarget
                                                           {
@@ -307,22 +331,24 @@
             return indexedFeatures;
         }
 
-        private int GetTargetValue(double startValue, int startIndex)
+        private double GetTargetValue(double startValue, int startIndex)
         {
+            var target = this.LowerBound;
             for (var idx = startIndex; idx >= startIndex - this.CandleCount; idx--)
             {
-                if (Helper.Delta(this.Symbol.Close[idx], startValue) > this.UpperBound)
+                var gain = Helper.Delta(this.Symbol.Close[idx], startValue);
+                if (gain > target)
                 {
-                    return 1;
+                    target = gain;
                 }
 
-                if (Helper.Delta(this.Symbol.Close[idx], startValue) < this.LowerBound)
+                if (gain < this.LowerBound)
                 {
-                    return 0;
+                    break;
                 }
             }
 
-            return 0;
+            return target;
         }
 
         private void SetHighestValueForTrade(Trade trade)

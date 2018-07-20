@@ -33,10 +33,10 @@
         public List<double> LowerBoundCurve { get; } = new List<double>();
 
         [JsonConverter(typeof(DoubleJsonConverter))]
-        public double Gain => (this.BuyValue > 0) && (this.SellValue > 0) ? Helper.Delta(this.SellValue, this.BuyValue) - this.CostOfTrades : 0;
+        public double Gain => (this.BuyValue > 0) && (this.SellValue > 0) ? 100 * Helper.Delta(this.SellValue, this.BuyValue) - this.CostOfTrades : 0;
 
         [JsonConverter(typeof(DoubleJsonConverter))]
-        public double PossibleGain => (this.HighestValue > 0) && (this.BuyValue > 0) ? Helper.Delta(this.HighestValue, this.BuyValue) - this.CostOfTrades : 0;
+        public double PossibleGain => (this.HighestValue > 0) && (this.BuyValue > 0) ? 100 * Helper.Delta(this.HighestValue, this.BuyValue) - this.CostOfTrades : 0;
 
         public int Days => (this.SellDate - this.BuyDate).Days;
 

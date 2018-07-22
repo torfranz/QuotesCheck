@@ -6,6 +6,6 @@
 
         public double[] Features { get; set; }
 
-        public double? Target { get; set; }
+        public int? Target { get; set; }
     }
 }

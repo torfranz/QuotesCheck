@@ -169,6 +169,30 @@
             return hiLoDiff;
         }
 
+        public static double[] DayOfWeek(SymbolInformation symbol)
+        {
+            var day = symbol.Day;
+            var dayOfWeek = Create(day.Length);
+            for (var index = day.Length - 1; index >= 0; index--)
+            {
+                dayOfWeek[index] = Convert.ToInt32(day[index].DayOfWeek);
+            }
+
+            return dayOfWeek;
+        }
+
+        public static double[] Month(SymbolInformation symbol)
+        {
+            var day = symbol.Day;
+            var month = Create(day.Length);
+            for (var index = day.Length - 1; index >= 0; index--)
+            {
+                month[index] = day[index].Month;
+            }
+
+            return month;
+        }
+
         public static double[] PSAR(SymbolInformation symbol, double factor, double increment, double factorMax)
         {
             // Difference of High and Low
@@ -845,7 +869,7 @@
             // macd
             for (var index = data1.Length - 1; index >= 0; index--)
             {
-                relativeDistance[index] = (data1[index] - data2[index]) / data2[index];
+                relativeDistance[index] = nn((data1[index] - data2[index]) / data2[index]);
             }
 
             return relativeDistance;

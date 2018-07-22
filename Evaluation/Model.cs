@@ -7,6 +7,7 @@
 
     using Accord;
     using Accord.Math;
+    using Accord.Math.Distances;
     using Accord.Neuro;
 
     internal class Model
@@ -72,8 +73,17 @@
             this.dmi = this.Scale(dmi, 0, 100);
             this.diPlus = this.Scale(diPlus, 0, 100);
             this.diMinus = this.Scale(diMinus, 0, 100);
+            this.DayOfWeek = Scale(Indicators.DayOfWeek(symbol), 0, 6);
+            this.Month = Scale(Indicators.Month(symbol), 1, 12);
+            this.RelMacdSignal = this.Scale(Indicators.Distance(RelativeMACD, RelativeSignal), -0.1, 0.1);
+            //var corr = new PearsonCorrelation();
+            //var sim = corr.Similarity(this.Ema20, this.Ema20);
         }
 
+        public double[] DayOfWeek { get; }
+
+        public double[] Month { get; }
+        public double[] RelMacdSignal { get; }
         public double[] Vola { get; }
 
         public double[] St_Close { get; }
@@ -106,11 +116,11 @@
 
         public Network[] Networks { get; private set; }
 
-        public double UpperBound { get; set; } = 0.10;
+        public double UpperBound { get; set; } = 0.15;
 
         public double LowerBound { get; set; } = -0.05;
 
-        public int CandleCount { get; set; } = 20;
+        public int CandleCount { get; set; } = 50;
 
         public int FeatureSetsCount => 1;
 
@@ -126,6 +136,7 @@
             this.Networks = new Network[featureSetsCount];
             for (var idx = 0; idx < featureSetsCount; idx++)
             {
+                Console.WriteLine($"Learning feature set {idx+1} for {Symbol.ISIN} from {Symbol.Day[range.Max]:yyyy-MM-dd} - {Symbol.Day[range.Min]:yyyy-MM-dd} [{range.Length + 1} data points]");
                 var features = featureSets[idx].Select(item => item.Features).ToArray();
                 var targets = featureSets[idx].Select(item => item.Target.GetValueOrDefault()).ToArray();
                 this.Networks[idx] = this.Learner.Learn(features, targets);
@@ -151,10 +162,10 @@
                     Debug.Assert(indexedFeatures.Index == idx);
 
                     var network = this.Networks[featureIdx];
-                    sum += network.Compute(indexedFeatures.Features)[0];
+                    sum += network.Compute(indexedFeatures.Features).ArgMax();
                 }
 
-                result.Targets[idx - range.Min] = new IndexedTarget { Index = idx, Target = sum / featureSetsCount };
+                result.Targets[idx - range.Min] = new IndexedTarget { Index = idx, Target = Convert.ToInt32(sum / featureSetsCount) };
             }
 
             return result;
@@ -182,7 +193,7 @@
                 var indexedTarget = targetResult.Targets[i - targetResult.Range.Min];
                 Debug.Assert(indexedTarget.Index == i);
 
-                if ((trade == null) && (indexedTarget.Target > this.UpperBound))
+                if ((trade == null) && (indexedTarget.Target == 1))
                 {
                     trade = new Trade
                                 {
@@ -194,7 +205,7 @@
                     result.Trades.Add(trade);
                     result.EquityCurve.Add((trade.BuyDate, equityGain));
 
-                    initialTargetUpperBound = targetUpperBound = (1 + indexedTarget.Target) * trade.BuyValue;
+                    initialTargetUpperBound = targetUpperBound = (1 + UpperBound) * trade.BuyValue;
                     lowerBound = (1 + this.LowerBound) * trade.BuyValue;
 
                     trade.LowerBoundCurve.Add(lowerBound);
@@ -205,7 +216,7 @@
                     var close = this.Symbol.Close[i];
 
                     // equity change for this day compared to buy
-                    result.EquityCurve.Add((this.Symbol.Day[i], 100 * Helper.Delta(close, trade.BuyValue) + equityGain));
+                    //result.EquityCurve.Add((this.Symbol.Day[i], 100 * Helper.Delta(close, trade.BuyValue) + equityGain));
 
                     // did the close leave the lowerBound -> upperBound range, close the trade on next day open
                     if ((close >= targetUpperBound) || (close <= lowerBound))
@@ -225,7 +236,7 @@
                     else
                     {
                         // is this day also expecting more gains, adapt upper and lower for following days
-                        var newTargetUpperBound = (1 + indexedTarget.Target) * close;
+                        var newTargetUpperBound = (1 + UpperBound) * close;
                         if (newTargetUpperBound > targetUpperBound)
                         {
                             lowerBound += newTargetUpperBound - targetUpperBound;
@@ -298,21 +309,8 @@
             for (var idx = range.Min; idx <= range.Max; idx++)
             {
                 // features
-                var dayOfWeek = this.Scale(Convert.ToInt32(this.Days[idx].DayOfWeek), 0, 6);
-                var season = this.Scale(Math.Abs(6.5 - this.Days[idx].Month), 0.5, 5.5);
-                var rsi = this.RSI[idx];
-                var ema20_50 = this.Ema20_50[idx];
-                var ema50_200 = this.Ema50_200[idx];
-                var ema50_Close = this.Ema50_Close[idx];
-                var st_Close = this.St_Close[idx];
-                var relMacd = this.RelativeMACD[idx];
-                var relSignal = this.RelativeSignal[idx];
-                var elMacd_relSignal = this.Scale(Helper.Delta(relSignal, relMacd), -0.05, 0.05);
-                var intradayGain = this.Scale(Helper.Delta(this.Close[idx], this.Open[idx]), -0.10, 0.10);
-                var todaysGain = this.Scale(Helper.Delta(this.Close[idx], this.Close[idx + 1]), -0.10, 0.10);
-                var todaysVolumeGain = this.Scale(Helper.Delta(this.Volume[idx], this.Volume[idx + 1]), -0.20, 0.20);
-
-                var target = createTargets ? this.GetTargetValue(this.Symbol.Open[idx - 1], idx - 1) : default(double?);
+                //var target = createTargets ? this.GetTargetValue(this.Symbol.Open[idx - 1], idx - 1) : default(double?);
+                var target = createTargets ? this.GetClass(this.Symbol.Open[idx - 1], idx - 1) : default(int?);
 
                 indexedFeatures[0][idx - range.Min] = new IndexedFeaturesAndTarget
                                                           {
@@ -320,7 +318,12 @@
                                                               Target = target,
                                                               Features = new[]
                                                                              {
-                                                                                 rsi, ema20_50, ema50_200, ema50_Close, this.bullish[idx], dayOfWeek, season
+                                                                  Ema20_50[idx],
+                                                                  RSI[idx],
+                                                                  RelMacdSignal[idx],
+                                                                  bullish[idx],
+                                                                  St_Close[idx]
+                                                                  //, this.DayOfWeek[idx], this.Month[idx]
                                                                              }
                                                           };
                 //indexedFeatures[1][idx - range.Min] =
@@ -353,6 +356,26 @@
             }
 
             return target;
+        }
+
+        private int GetClass(double startValue, int startIndex)
+        {
+            var target = this.LowerBound;
+            for (var idx = startIndex; idx >= Math.Max(0, startIndex - this.CandleCount); idx--)
+            {
+                var gain = Helper.Delta(this.Symbol.Close[idx], startValue);
+                if (gain > UpperBound)
+                {
+                    return 1;
+                }
+
+                if (gain < this.LowerBound)
+                {
+                    break;
+                }
+            }
+
+            return 0;
         }
 
         private void SetHighestValueForTrade(Trade trade)
